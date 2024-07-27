@@ -1,27 +1,14 @@
 import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-} from "react-native";
-import {
-  TextInput,
-  Button,
-  Card,
-  Title,
-  Paragraph,
-  Appbar,
-} from "react-native-paper";
+import { View, StyleSheet, Text, ScrollView, Image, TouchableOpacity } from "react-native";
+import { TextInput, Button, Card, Title, Paragraph, Appbar } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "react-native-image-picker";
-import axios from 'axios';
+import * as DocumentPicker from "expo-document-picker";
+import { useRouter } from "expo-router";
 
-
-const RegisterForm = ({ navigateToLogin }) => {
+const TutorSetUp = ({ navigateToLogin }) => {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -35,47 +22,30 @@ const RegisterForm = ({ navigateToLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [photo, setPhoto] = useState(null);
+  const [qualifications, setQualifications] = useState("");
 
-  
+  const handleUpload = async () => {
+    const result = await DocumentPicker.getDocumentAsync();
+    if (result.type === "success") {
+      setQualifications(result.name);
+    }
+  };
+
   const handleRegister = async () => {
     if (password !== confirmPassword) {
       setMessage("Passwords do not match!!");
       return;
     }
-
-    try {
-      const formData = {
-        name,
-        email,
-        phone,
-        day,
-        month,
-        year,
-        institution,
-        graduationYear,
-        course,
-        password,
-        photo: photo ? photo.uri : ""
-      };
-      //below use your computer's ip address not the localhost
-
-      const response = await axios.post('http://192.168.100.219:3000/api/users/register', formData);
-      if (response.status === 201) {
-        setMessage("User registered successfully!");
-      } else {
-        setMessage("Error registering user");
-      }
-      navigateToLogin();
-    } catch (error) {
-      console.error("Error registering user:", error); // Optional: Log the error for debugging
-      setMessage("Error registering user");
-    }
+    router.push("/(tabs)");
   };
 
   const selectPhoto = () => {
     const options = {
-      noData: true,
+      mediaType: "photo", // Limit to photos only
+      quality: 1, // High quality
+      includeBase64: false, // Set to true if you need base64 encoded image
     };
+
     ImagePicker.launchImageLibrary(options, (response) => {
       if (response.assets && response.assets.length > 0) {
         setPhoto(response.assets[0]);
@@ -85,37 +55,31 @@ const RegisterForm = ({ navigateToLogin }) => {
 
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const years = Array.from(
-    { length: 100 },
-    (_, i) => new Date().getFullYear() - i
-  );
+  const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
 
   return (
     <View style={styles.container}>
       <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="TutorBook" titleStyle={styles.appBarTitle} />
         <Appbar.Action icon="menu" onPress={() => {}} />
       </Appbar.Header>
       <View style={styles.horizontalLine} />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        overScrollMode="never"
-      >
+      <ScrollView>
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.header}>
               <Title style={styles.title}>Account Set-Up</Title>
-              <TouchableOpacity
-                onPress={selectPhoto}
-                style={styles.photoContainer}
-              >
+              <TouchableOpacity onPress={selectPhoto} style={styles.photoContainer}>
                 {photo ? (
                   <Image source={{ uri: photo.uri }} style={styles.photo} />
                 ) : (
                   <View style={styles.iconContainer}>
                     <Icon name="photo-camera" size={30} color="#000" />
-                    <Text style={styles.uploadText}>Upload Photo</Text>
+                    <Text style={styles.uploadText} className="font-bold">
+                      Upload Profile Photo
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -138,8 +102,6 @@ const RegisterForm = ({ navigateToLogin }) => {
               style={styles.input}
               mode="outlined"
               theme={{ roundness: 20 }}
-              autoCapitalize="none"
-              keyboardType="email-address"
               outlineStyle={{ borderWidth: 0 }}
             />
 
@@ -148,7 +110,6 @@ const RegisterForm = ({ navigateToLogin }) => {
               value={phone}
               onChangeText={setPhone}
               style={styles.input}
-              keyboardType="phone-pad"
               mode="outlined"
               theme={{ roundness: 20 }}
               outlineStyle={{ borderWidth: 0 }}
@@ -166,75 +127,31 @@ const RegisterForm = ({ navigateToLogin }) => {
                   outlineStyle={{ borderWidth: 0 }}
                 />
               </View>
-
-              <View style={styles.column}>
-                <Text style={styles.label}>Graduation Year</Text>
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={graduationYear}
-                    onValueChange={(itemValue) => setGraduationYear(itemValue)}
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Year" value="" />
-                    {years.map((y) => (
-                      <Picker.Item
-                        key={y}
-                        label={y.toString()}
-                        value={y.toString()}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
             </View>
 
             <Text style={styles.label}>Graduation Date</Text>
             <View style={styles.datePickerContainer}>
               <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={day}
-                  onValueChange={(itemValue) => setDay(itemValue)}
-                  style={styles.picker}
-                >
+                <Picker selectedValue={day} onValueChange={(itemValue) => setDay(itemValue)} style={styles.picker}>
                   <Picker.Item label="Day" value="" />
                   {days.map((d) => (
-                    <Picker.Item
-                      key={d}
-                      label={d.toString()}
-                      value={d.toString()}
-                    />
+                    <Picker.Item key={d} label={d.toString()} value={d.toString()} />
                   ))}
                 </Picker>
               </View>
               <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={month}
-                  onValueChange={(itemValue) => setMonth(itemValue)}
-                  style={styles.picker}
-                >
+                <Picker selectedValue={month} onValueChange={(itemValue) => setMonth(itemValue)} style={styles.picker}>
                   <Picker.Item label="Month" value="" />
                   {months.map((m) => (
-                    <Picker.Item
-                      key={m}
-                      label={m.toString()}
-                      value={m.toString()}
-                    />
+                    <Picker.Item key={m} label={m.toString()} value={m.toString()} />
                   ))}
                 </Picker>
               </View>
               <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={year}
-                  onValueChange={(itemValue) => setYear(itemValue)}
-                  style={styles.picker}
-                >
+                <Picker selectedValue={year} onValueChange={(itemValue) => setYear(itemValue)} style={styles.picker}>
                   <Picker.Item label="Year" value="" />
                   {years.map((y) => (
-                    <Picker.Item
-                      key={y}
-                      label={y.toString()}
-                      value={y.toString()}
-                    />
+                    <Picker.Item key={y} label={y.toString()} value={y.toString()} />
                   ))}
                 </Picker>
               </View>
@@ -248,7 +165,6 @@ const RegisterForm = ({ navigateToLogin }) => {
               theme={{ roundness: 20 }}
               outlineStyle={{ borderWidth: 0 }}
             />
-            
 
             <Text style={styles.label}>Password</Text>
             <TextInput
@@ -272,24 +188,21 @@ const RegisterForm = ({ navigateToLogin }) => {
               outlineStyle={{ borderWidth: 0 }}
             />
             <Paragraph style={{ color: "red" }}>{message}</Paragraph>
-            <View style={{alignItems:'center'}}>
+
+            <Text style={styles.label}>Upload Academic Qualifications and Certificate of Good Conduct</Text>
+            <TouchableOpacity onPress={handleUpload} className="flex-row items-center bg-gray-300 p-3  rounded-3xl">
+              <Icon name="upload" size={24} color="black" />
+              <Text className="ml-2 text-gray-700">{qualifications || "Tap to upload "}</Text>
+            </TouchableOpacity>
+            <View style={{ alignItems: "center" }} className="my-5">
               <Button
                 mode="contained"
                 onPress={handleRegister}
                 style={styles.button}
+                className="bg-slate-600 text-slate-900 font-bold my-5"
               >
-                Create Account
+                Become a tutor
               </Button>
-              <View style={{flexDirection:'row', paddingTop:10}}>
-              <Text style={{ fontWeight: "bold", fontSize: 18,paddingTop:10,paddingRight:10 }}>OR</Text>
-              <Button
-                mode="contained"
-                onPress={navigateToLogin}
-                style={styles.button}
-              >
-                Login
-              </Button>
-              </View>
             </View>
           </Card.Content>
         </Card>
@@ -311,7 +224,13 @@ const styles = StyleSheet.create({
   card: {
     padding: 10,
     paddingTop: 0,
-    paddingBottom:0,
+    paddingBottom: 0,
+    backgroundColor: "#fff",
+  },
+  card: {
+    padding: 10,
+    paddingTop: 0,
+    paddingBottom: 0,
     backgroundColor: "#fff",
   },
   header: {
@@ -334,7 +253,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 50,
-    backgroundColor: "#E5E4E2",
+    borderColor: "#e0e0e0",
+    borderWidth: 1,
+    overflow: "hidden",
   },
   photo: {
     width: 100,
@@ -357,14 +278,13 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 10,
     height: 35,
-    backgroundColor: "#E5E4E2",
+    backgroundColor: "#CCC",
     borderRadius: 20,
     paddingHorizontal: 10,
   },
   button: {
-    marginBottom:0,
+    marginBottom: 0,
     marginTop: 0,
-    backgroundColor: "#E5E4E2",
     maxWidth: 150,
     alignItems: "center",
   },
@@ -397,4 +317,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RegisterForm;
+export default TutorSetUp;

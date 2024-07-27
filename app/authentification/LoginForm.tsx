@@ -5,23 +5,78 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { TextInput, Button, Card, Paragraph, Appbar } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import Icon from "react-native-vector-icons/MaterialIcons";
 
-const LoginForm = ({ navigateToRegister }) => {
+const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess }) => {
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
 
   const handleLogin = async () => {
-    // Login here
+    setLoading(true); // Start loading
+    try {
+      //below use your computer's ip address not the localhost
+      const response = await fetch('http://192.168.100.219:3000/api/users/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        setMessage(errorMessage);
+        return;
+      }
+
+      const data = await response.json();
+      const { token } = data;
+
+      console.log('Token:', token);
+      // Handle the token (e.g., save it to AsyncStorage or navigate to another screen)
+      setMessage('Login successful!');
+
+      onLoginSuccess(); // Indicate successful login
+
+      // Navigate to the main page
+      navigation.navigate('(tabs)');
+    } catch (error) {
+      console.error('Error logging in:', error);
+      setMessage('Error logging in. Please try again.');
+    } finally {
+      setLoading(false); // End loading
+    }
   };
 
-  const handleForgotPassword = () => {
-    // Password logic here
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setMessage('Please enter your email');
+      return;
+    }
+
+    setLoading(true); // Start loading
+    try {
+      const response = await fetch('http://localhost:3000/api/users/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.text();
+      setMessage(data);
+    } catch (error) {
+      console.error('Error:', error);
+      setMessage('An error occurred. Please try again.');
+    } finally {
+      setLoading(false); // End loading
+    }
   };
 
   return (
@@ -33,7 +88,10 @@ const LoginForm = ({ navigateToRegister }) => {
       </Appbar.Header>
       <View style={styles.horizontalLine} />
 
-      <ScrollView>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        overScrollMode="never"
+      >
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.title}>Login</Text>
@@ -45,6 +103,8 @@ const LoginForm = ({ navigateToRegister }) => {
               style={styles.input}
               mode="outlined"
               theme={{ roundness: 20 }}
+              autoCapitalize="none"
+              keyboardType="email-address"
               outlineStyle={{ borderWidth: 0 }}
             />
 
@@ -80,8 +140,9 @@ const LoginForm = ({ navigateToRegister }) => {
                 mode="contained"
                 onPress={handleLogin}
                 style={styles.button}
+                disabled={loading} // Disable button while loading
               >
-                Login
+                {loading ? <ActivityIndicator color="#fff" /> : "Login"}
               </Button>
             </View>
           </Card.Content>
@@ -136,7 +197,7 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     // textAlign: "center",
-    marginLeft:10,
+    marginLeft: 10,
     marginTop: 10,
     textDecorationLine: "none",
   },
