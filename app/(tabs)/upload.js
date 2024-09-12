@@ -7,7 +7,7 @@ import io from 'socket.io-client';
 const Upload = () => {
     const [video, setVideo] = useState(null);
     const [title, setTitle] = useState('');
-    const socket = io('http://192.168.100.219:3000'); // Adjust the URL to match your server
+    const socket = io('http://192.168.43.5::3000'); // Adjust the URL to match your server
 
     useEffect(() => {
         const getPermissions = async () => {
@@ -40,28 +40,9 @@ const Upload = () => {
         }
     };
 
-    const checkVideoExists = async (videoName) => {
-        try {
-            const response = await axios.get('http://192.168.100.219:3000/api/videos');
-            const videos = response.data;
-            return videos.some(video => video.videoUrl.split('/').pop() === videoName);
-        } catch (error) {
-            console.error('Error checking video existence:', error);
-            return false;
-        }
-    };
-
     const uploadVideo = async () => {
         if (!title || !video) {
             Alert.alert('Missing Information', 'Please provide both a title and a video to upload.');
-            return;
-        }
-
-        const videoName = video.split('/').pop(); // Extract the filename from the video URI
-        const videoExists = await checkVideoExists(videoName);
-
-        if (videoExists) {
-            Alert.alert('Error', 'This video already exists.');
             return;
         }
 
@@ -70,11 +51,11 @@ const Upload = () => {
         formData.append('video', {
             uri: video,
             type: 'video/mp4', // Adjust the type as needed
-            name: videoName,
+            name: 'video.mp4',
         });
 
         try {
-            await axios.post('http://192.168.100.219:3000/api/videos/upload', formData, {
+            await axios.post('http://192.168.43.5:3000/api/videos/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -84,7 +65,7 @@ const Upload = () => {
             setTitle(''); // Clear title after upload
 
             // Emit event to update viewers
-            socket.emit('newVideo', { title, videoUrl: videoName });
+            socket.emit('newVideo', { title, videoUrl: video });
         } catch (error) {
             Alert.alert('Error', 'Failed to upload video.');
             console.error(error);

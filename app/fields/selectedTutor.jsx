@@ -33,7 +33,7 @@ const SelectedTutor = () => {
 
   const handleBooking = async () => {
     try {
-      const response = await fetch('http://192.168.100.219:3000/api/bookings', {
+      const response = await fetch('http://192.168.43.5:3000/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

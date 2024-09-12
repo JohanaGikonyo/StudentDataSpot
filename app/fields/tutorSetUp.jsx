@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Text, ScrollView, Image, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { TextInput, Button, Card, Title, Paragraph, Appbar } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "react-native-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
+import axios from 'axios';
 
 const TutorSetUp = ({ navigateToLogin }) => {
   const router = useRouter();
@@ -23,21 +24,57 @@ const TutorSetUp = ({ navigateToLogin }) => {
   const [message, setMessage] = useState("");
   const [photo, setPhoto] = useState(null);
   const [qualifications, setQualifications] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleUpload = async () => {
     const result = await DocumentPicker.getDocumentAsync();
     if (result.type === "success") {
-      setQualifications(result.name);
+      setQualifications(result.uri);
     }
   };
-
   const handleRegister = async () => {
     if (password !== confirmPassword) {
       setMessage("Passwords do not match!!");
       return;
     }
-    router.push("/(tabs)");
+  
+    setLoading(true);
+  
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('phone', phone);
+    formData.append('institution', institution);
+    formData.append('graduationYear', graduationYear);
+    formData.append('course', course);
+    formData.append('password', password);
+    formData.append('photo', photo ? {
+      uri: photo.uri,
+      type: photo.type || 'image/jpeg',
+      name: photo.fileName || 'photo.jpg'
+    } : '');
+    formData.append('qualifications', qualifications ? {
+      uri: qualifications,
+      type: 'application/pdf',
+      name: qualifications.split('/').pop()
+    } : '');
+  
+    try {
+      const response = await axios.post('http://192.168.43.5:3000/api/tutors/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setMessage("Registration successful!");
+      router.push("/(tabs)");
+    } catch (error) {
+      console.log('Error response:', error.response); // Debug log
+      setMessage("Registration failed: " + (error.response ? error.response.data : error.message));
+    } finally {
+      setLoading(false);
+    }
   };
+  
 
   const selectPhoto = () => {
     const options = {
@@ -156,7 +193,8 @@ const TutorSetUp = ({ navigateToLogin }) => {
                 </Picker>
               </View>
             </View>
-            <Text style={styles.label}>Course/Major</Text>
+
+            <Text style={styles.label}>Course</Text>
             <TextInput
               value={course}
               onChangeText={setCourse}
@@ -170,8 +208,8 @@ const TutorSetUp = ({ navigateToLogin }) => {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              style={styles.input}
               secureTextEntry
+              style={styles.input}
               mode="outlined"
               theme={{ roundness: 20 }}
               outlineStyle={{ borderWidth: 0 }}
@@ -181,29 +219,28 @@ const TutorSetUp = ({ navigateToLogin }) => {
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              style={styles.input}
               secureTextEntry
+              style={styles.input}
               mode="outlined"
               theme={{ roundness: 20 }}
               outlineStyle={{ borderWidth: 0 }}
             />
-            <Paragraph style={{ color: "red" }}>{message}</Paragraph>
 
-            <Text style={styles.label}>Upload Academic Qualifications and Certificate of Good Conduct</Text>
-            <TouchableOpacity onPress={handleUpload} className="flex-row items-center bg-gray-300 p-3  rounded-3xl">
-              <Icon name="upload" size={24} color="black" />
-              <Text className="ml-2 text-gray-700">{qualifications || "Tap to upload "}</Text>
+            <Text style={styles.label}>Upload Qualifications</Text>
+            <TouchableOpacity onPress={handleUpload} style={styles.uploadButton}>
+              <Icon name="cloud-upload" size={30} color="#000" />
+              <Text style={styles.uploadButtonText}>Upload PDF</Text>
             </TouchableOpacity>
-            <View style={{ alignItems: "center" }} className="my-5">
-              <Button
-                mode="contained"
-                onPress={handleRegister}
-                style={styles.button}
-                className="bg-slate-600 text-slate-900 font-bold my-5"
-              >
-                Become a tutor
+
+            {loading ? (
+              <ActivityIndicator size="large" color="#0000ff" />
+            ) : (
+              <Button mode="contained" onPress={handleRegister} style={styles.button}>
+                Create Account
               </Button>
-            </View>
+            )}
+
+            <Paragraph style={styles.message}>{message}</Paragraph>
           </Card.Content>
         </Card>
       </ScrollView>
@@ -316,5 +353,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
 });
+
 
 export default TutorSetUp;

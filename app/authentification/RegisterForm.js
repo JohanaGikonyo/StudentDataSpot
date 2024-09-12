@@ -19,9 +19,13 @@ import { Picker } from "@react-native-picker/picker";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "react-native-image-picker";
 import axios from 'axios';
+import { useNavigation } from "@react-navigation/native";
+
 
 
 const RegisterForm = ({ navigateToLogin }) => {
+  const navigation = useNavigation();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -36,42 +40,51 @@ const RegisterForm = ({ navigateToLogin }) => {
   const [message, setMessage] = useState("");
   const [photo, setPhoto] = useState(null);
 
-  
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-      setMessage("Passwords do not match!!");
+      setMessage("Passwords do not match!");
       return;
     }
-
+  
     try {
-      const formData = {
-        name,
-        email,
-        phone,
-        day,
-        month,
-        year,
-        institution,
-        graduationYear,
-        course,
-        password,
-        photo: photo ? photo.uri : ""
-      };
-      //below use your computer's ip address not the localhost
-
-      const response = await axios.post('http://192.168.100.219:3000/api/users/register', formData);
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('phone', phone);
+      formData.append('day', day);
+      formData.append('month', month);
+      formData.append('year', year);
+      formData.append('institution', institution);
+      formData.append('graduationYear', graduationYear);
+      formData.append('course', course);
+      formData.append('password', password);
+  
+      if (photo) {
+        formData.append('photo', {
+          uri: photo.uri,
+          name: `photo_${Date.now()}.jpg`, // Use timestamp or any other unique identifier
+          type: photo.type,
+        });
+      }
+  
+      const response = await axios.post('http://192.168.43.5:3000/api/users/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
       if (response.status === 201) {
         setMessage("User registered successfully!");
+        navigation.navigate('(tabs)');
       } else {
         setMessage("Error registering user");
       }
-      navigateToLogin();
     } catch (error) {
-      console.error("Error registering user:", error); // Optional: Log the error for debugging
+      console.error("Error registering user:", error);
       setMessage("Error registering user");
     }
   };
-
+  
   const selectPhoto = () => {
     const options = {
       noData: true,
@@ -101,7 +114,9 @@ const RegisterForm = ({ navigateToLogin }) => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         overScrollMode="never"
+      
       >
+      
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.header}>

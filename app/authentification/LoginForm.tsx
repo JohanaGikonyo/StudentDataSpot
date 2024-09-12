@@ -22,7 +22,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess
     setLoading(true); // Start loading
     try {
       //below use your computer's ip address not the localhost
-      const response = await fetch('http://192.168.100.219:3000/api/users/login', {
+      const response = await fetch('http://192.168.43.5:3000/api/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess
 
     setLoading(true); // Start loading
     try {
-      const response = await fetch('http://localhost:3000/api/users/forgot-password', {
+      const response = await fetch('http://192.168.43.5:3000/api/users/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

@@ -20,7 +20,7 @@ const DefaultTab = () => {
         setRefreshing(true);
         setLoading(true);
         try {
-            const response = await axios.get('http://192.168.100.219:3000/api/videos');
+            const response = await axios.get('http://192.168.43.5:3000/api/videos');
             console.log('Fetched Videos:', response.data); // Debugging
             setVideos(response.data);
         } catch (error) {
@@ -42,33 +42,33 @@ const DefaultTab = () => {
     const filteredVideos = videos.filter(video => video.title.toLowerCase().includes(search.toLowerCase()));
 
     const onViewableItemsChanged = useCallback(({ viewableItems }) => {
-        const visibleVideoIds = viewableItems.map(item => item._id);
-        setPlayingVideoId(prevPlayingVideoId => {
-            if (prevPlayingVideoId && !visibleVideoIds.includes(prevPlayingVideoId)) {
-                return null;
-            }
-            return prevPlayingVideoId;
-        });
-    }, []);
+        const visibleVideoIds = viewableItems.map(item => item.item._id);
+
+        // Pause the currently playing video if it is no longer visible
+        if (playingVideoId && !visibleVideoIds.includes(playingVideoId)) {
+            setPlayingVideoId(null);
+        }
+    }, [playingVideoId]);
+
+    const handlePlaybackStatusUpdate = useCallback((status, itemId) => {
+        if (status.isPlaying && itemId !== playingVideoId) {
+            setPlayingVideoId(itemId);
+        }
+        if (status.didJustFinish) {
+            setPlayingVideoId(null);
+        }
+    }, [playingVideoId]);
 
     const renderItem = ({ item }) => (
         <View style={styles.videoContainer}>
             <Video
-                source={{ uri: `http://192.168.100.219:3000/${item.videoUrl}` }} // Ensure the URL is correct
+                source={{ uri: `http://192.168.43.5:3000/${item.videoUrl}` }}
                 style={styles.video}
                 useNativeControls
-                resizeMode="contain"
+                resizeMode="cover"
                 shouldPlay={item._id === playingVideoId} // Only play if it's the currently playing video
-                onPlaybackStatusUpdate={(status) => {
-                    if (status.isPlaying && item._id !== playingVideoId) {
-                        setPlayingVideoId(item._id);
-                    }
-                    if (status.didJustFinish) {
-                        setPlayingVideoId(null);
-                        setTimeout(() => setPlayingVideoId(item._id), 100); // Restart video after a short delay
-                    }
-                }}
-                onError={(error) => console.error('Video Error:', error)}
+                onPlaybackStatusUpdate={(status) => handlePlaybackStatusUpdate(status, item._id)}
+                onError={(error) => console.error('Video Error:', error)} // to be commented out once the app is launched for users
             />
             <View style={styles.titleSubscribeContainer}>
                 <Text style={styles.videoTitle}>{item.title}</Text>
@@ -250,26 +250,25 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     verticalLine: {
-        width: 1,
         height: 24,
-        backgroundColor: '#000',
-        marginHorizontal: 10,
+        width: 1,
+        backgroundColor: '#ddd',
+        marginHorizontal: 5,
     },
     actionText: {
-        marginLeft: 5,
         fontSize: 16,
-        color: 'white',
+        marginLeft: 5,
     },
     commentsContainer: {
-        marginVertical: 10,
+        marginTop: 10,
     },
     commentsCount: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
+        marginBottom: 5,
     },
     commentText: {
         fontSize: 16,
-        color: '#555',
     },
 });
 
