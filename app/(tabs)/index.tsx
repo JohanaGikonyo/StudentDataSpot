@@ -15,7 +15,36 @@ const DefaultTab = () => {
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50,
     });
+    const handleSubscribe = async (videoId) => {
+        try {
+            const response = await axios.post(`http://192.168.43.5:3000/api/interactions/subscribe/${videoId}`);
+            console.log('Subscribed successfully:', response.data);
+            fetchVideos(); // Fetch updated data
+        } catch (error) {
+            console.error('Subscription failed:', error.response ? error.response.data : error.message);
+        }
+    };const handleLike = async (videoId) => {
+        try {
+            const response = await axios.post(`http://192.168.43.5:3000/api/interactions/like/${videoId}`);
+            console.log('Liked successfully:', response.data);
+            fetchVideos(); // Fetch updated data
+        } catch (error) {
+            console.error('Like failed:', error.response ? error.response.data : error.message);
+        }
+    };
+    
+    const handleDislike = async (videoId) => {
+        try {
+            const response = await axios.post(`http://192.168.43.5:3000/api/interactions/dislike/${videoId}`);
+            console.log('Disliked successfully:', response.data);
+            fetchVideos(); // Fetch updated data
+        } catch (error) {
+            console.error('Dislike failed:', error.response ? error.response.data : error.message);
+        }
+    };
+    
 
+    
     const fetchVideos = useCallback(async () => {
         setRefreshing(true);
         setLoading(true);
@@ -57,39 +86,42 @@ const DefaultTab = () => {
         if (status.didJustFinish) {
             setPlayingVideoId(null);
         }
-    }, [playingVideoId]);
-
-    const renderItem = ({ item }) => (
+    }, [playingVideoId]);const renderItem = ({ item }) => (
         <View style={styles.videoContainer}>
             <Video
                 source={{ uri: `http://192.168.43.5:3000/${item.videoUrl}` }}
                 style={styles.video}
                 useNativeControls
                 resizeMode="cover"
-                shouldPlay={item._id === playingVideoId} // Only play if it's the currently playing video
+                shouldPlay={item._id === playingVideoId}
                 onPlaybackStatusUpdate={(status) => handlePlaybackStatusUpdate(status, item._id)}
-                onError={(error) => console.error('Video Error:', error)} // to be commented out once the app is launched for users
+                onError={(error) => console.error('Video Error:', error)}
             />
             <View style={styles.titleSubscribeContainer}>
                 <Text style={styles.videoTitle}>{item.title}</Text>
-                <TouchableOpacity style={styles.subscribeButton}>
+                <TouchableOpacity style={styles.subscribeButton} onPress={() => handleSubscribe(item._id)}>
                     <Text style={styles.actionText}>Subscribe</Text>
                 </TouchableOpacity>
             </View>
+    
+            {/* Dynamically load the tutor name, post time, and views */}
             <View style={styles.infoContainer}>
-                <Text style={styles.tutorName}>John Doe</Text>
-                <Text style={styles.postTime}>2 hours ago</Text>
-                <Text style={styles.views}>1,234 Views</Text>
+                <Text style={styles.tutorName}>{item.tutorName}</Text>
+                <Text style={styles.postTime}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
+                <Text style={styles.views}>{item.views} Views</Text>
             </View>
+    
+            {/* Dynamically load the likes and dislikes */}
             <View style={styles.actionsContainer}>
                 <View style={styles.thumbContainer}>
-                    <TouchableOpacity style={styles.actionButton}>
+                    <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item._id)}>
                         <FontAwesome name="thumbs-up" size={24} color="black" />
-                        <Text>467</Text>
+                        <Text>{item.likes}</Text>
                     </TouchableOpacity>
                     <View style={styles.verticalLine} />
-                    <TouchableOpacity style={styles.actionButton}>
+                    <TouchableOpacity style={styles.actionButton} onPress={() => handleDislike(item._id)}>
                         <FontAwesome name="thumbs-down" size={24} color="black" />
+                        <Text>{item.dislikes}</Text>
                     </TouchableOpacity>
                 </View>
                 <TouchableOpacity style={styles.actionButton}>
@@ -101,13 +133,18 @@ const DefaultTab = () => {
                     <Text style={styles.actionText}>Download</Text>
                 </TouchableOpacity>
             </View>
+    
+            {/* Display comments dynamically */}
             <View style={styles.commentsContainer}>
-                <Text style={styles.commentsCount}>Comments 18</Text>
-                <Text style={styles.commentText}>Awesome video</Text>
+                <Text style={styles.commentsCount}>Comments {item.comments.length}</Text>
+                {item.comments.length > 0 && (
+                    <Text style={styles.commentText}>{item.comments[0].text}</Text>
+                )}
             </View>
         </View>
     );
-
+    
+    
     return (
         <View style={styles.container}>
             <View style={styles.search}>

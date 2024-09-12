@@ -3,6 +3,7 @@ import {
   View,
   StyleSheet,
   Text,
+  Alert,
   ScrollView,
   Image,
   TouchableOpacity,
@@ -17,11 +18,9 @@ import {
 } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import * as ImagePicker from "react-native-image-picker";
+import * as ImagePicker from "expo-image-picker";
 import axios from 'axios';
 import { useNavigation } from "@react-navigation/native";
-
-
 
 const RegisterForm = ({ navigateToLogin }) => {
   const navigation = useNavigation();
@@ -39,10 +38,15 @@ const RegisterForm = ({ navigateToLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [photo, setPhoto] = useState(null);
-
   const handleRegister = async () => {
     if (password !== confirmPassword) {
       setMessage("Passwords do not match!");
+      return;
+    }
+  
+    // Check if required fields are provided
+    if (!name || !email || !password) {
+      setMessage("Name, email, and password are required.");
       return;
     }
   
@@ -62,7 +66,7 @@ const RegisterForm = ({ navigateToLogin }) => {
       if (photo) {
         formData.append('photo', {
           uri: photo.uri,
-          name: `photo_${Date.now()}.jpg`, // Use timestamp or any other unique identifier
+          name: `photo_${Date.now()}.jpg`,
           type: photo.type,
         });
       }
@@ -80,28 +84,34 @@ const RegisterForm = ({ navigateToLogin }) => {
         setMessage("Error registering user");
       }
     } catch (error) {
-      console.error("Error registering user:", error);
+      console.error("Error registering user:", error.response ? error.response.data : error.message);
       setMessage("Error registering user");
     }
   };
   
-  const selectPhoto = () => {
-    const options = {
-      noData: true,
-    };
-    ImagePicker.launchImageLibrary(options, (response) => {
-      if (response.assets && response.assets.length > 0) {
-        setPhoto(response.assets[0]);
+
+    const selectPhoto = async () => {
+      try {
+        // Prompt the user to pick an image from the library
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images, // Restrict to photos only
+          allowsEditing: false,  // Set to true if you want editing option
+          quality: 1,            // Highest quality
+        });
+    
+        if (!result.canceled) {
+          setPhoto(result.assets[0]);
+        } else {
+          console.log('User cancelled image picker');
+        }
+      } catch (error) {
+        console.log('ImagePicker Error: ', error);
       }
-    });
-  };
+    };
 
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const years = Array.from(
-    { length: 100 },
-    (_, i) => new Date().getFullYear() - i
-  );
+  const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
 
   return (
     <View style={styles.container}>
