@@ -1,15 +1,13 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity, TextInput } from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { tw } from "nativewind"; // Ensure nativewind is imported
+import { Appbar } from "react-native-paper";
+import { FontAwesome } from "@expo/vector-icons";
 
 const SelectedTutor = () => {
   const router = useRouter();
-  const { name, image, major, year, email } = useLocalSearchParams(); // Added email
+  const { name, image, major, year } = useLocalSearchParams();
   const [selectedValue, setSelectedValue] = useState(null);
-  const [studentName, setStudentName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [emailInput, setEmailInput] = useState(email);
 
   const radioButtons = [
     { label: "Online", value: "online" },
@@ -18,64 +16,33 @@ const SelectedTutor = () => {
 
   const RadioButton = ({ label, value, selected, onSelect }) => {
     return (
-      <TouchableOpacity className="flex-row items-center mb-2" onPress={() => onSelect(value)}>
-        <View
-          className={`h-6 w-6 rounded-full border-2 items-center justify-center mr-2 ${
-            selected ? "border-green-500" : "border-gray-800"
-          }`}
-        >
-          {selected && <View className="h-3 w-3 rounded-full bg-green-500" />}
+      <TouchableOpacity style={styles.radioButtonContainer} onPress={() => onSelect(value)}>
+        <View style={[styles.radioButton, { borderColor: selected ? "#4CAF50" : "#555" }]}>
+          {selected && <View style={styles.radioButtonInner} />}
         </View>
-        <Text className="text-lg">{label}</Text>
+        <Text style={styles.radioButtonLabel}>{label}</Text>
       </TouchableOpacity>
     );
   };
 
-  const handleBooking = async () => {
-    try {
-      const response = await fetch('http://192.168.43.5:3000/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tutorName: name,
-          tutorEmail: emailInput,
-          studentName,
-          sessionType: selectedValue,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('Booking successful');
-      } else {
-        alert(`Error: ${data.message}`);
-      }
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  };
-
   return (
     <View style={styles.container}>
-      <Text className="m-4 text-3xl font-bold">{name}</Text>
+      <Text style={styles.name}>{name}</Text>
       <Image source={{ uri: image }} style={styles.image} />
 
-      <View className="bg-slate-300 p-5 rounded-lg text-center">
-        <Text className="text-slate-800 m-2 font-bold">Name : {name}</Text>
-        <Text className="text-slate-800 m-2 font-bold">Major : {major}</Text>
-        <Text className="text-slate-800 m-2 font-bold">Institution : Multimedia University of Kenya</Text>
-        <Text className="text-slate-800 m-2 font-bold">Year : {year}</Text>
-        <Text className="text-slate-800 m-2 font-bold">Graduation Date : December 2027</Text>
-        <Text className="text-slate-800 m-2 font-bold">Phone Number: +25478545664</Text>
-        <Text className="text-slate-800 m-2 font-bold">Email : tutor@gmail.com</Text>
+      <View style={styles.detailsContainer}>
+        <Text style={styles.detailText}>Name: {name}</Text>
+        <Text style={styles.detailText}>Major: {major}</Text>
+        <Text style={styles.detailText}>Institution: Multimedia University of Kenya</Text>
+        <Text style={styles.detailText}>Year: {year}</Text>
+        <Text style={styles.detailText}>Graduation Date: December 2027</Text>
+        <Text style={styles.detailText}>Phone Number: +25478545664</Text>
+        <Text style={styles.detailText}>Email: tutor@gmail.com</Text>
       </View>
 
-      <View className="mt-4">
-        <Text className="mb-2 font-bold text-lg">To book a tutoring session, Choose</Text>
-        <View className="justify-center items-center p-5">
+      <View style={styles.bookingContainer}>
+        <Text style={styles.bookingTitle}>To book a tutoring session, Choose</Text>
+        <View style={styles.radioButtonGroup}>
           {radioButtons.map((radio, index) => (
             <RadioButton
               key={index}
@@ -85,33 +52,13 @@ const SelectedTutor = () => {
               onSelect={setSelectedValue}
             />
           ))}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Your Name"
-            value={studentName}
-            onChangeText={setStudentName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad" // Numeric keyboard for phone number
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={emailInput}
-            onChangeText={setEmailInput}
-            keyboardType="email-address" // Email keyboard
-          />
-
           <TouchableOpacity
-            className="mt-5 p-4 bg-slate-300 rounded-lg"
-            onPress={handleBooking}
+            style={styles.bookButton}
+            onPress={() => {
+              /* Handle booking logic here */
+            }}
           >
-            <Text className="text-lg font-bold">Book {selectedValue ? selectedValue : ""}</Text>
+            <Text style={styles.bookButtonText}>Book {selectedValue ? selectedValue : ""}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -127,18 +74,76 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
+  name: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
   image: {
     width: 150,
     height: 150,
     borderRadius: 15,
     marginBottom: 20,
   },
-  input: {
-    width: '100%',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
+  detailsContainer: {
+    backgroundColor: "#E0E0E0",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 20,
+  },
+  detailText: {
+    color: "#333",
+    marginBottom: 5,
+    fontWeight: "bold",
+  },
+  bookingContainer: {
+    marginTop: 10,
+    width: "100%",
+    alignItems: "center",
+  },
+  bookingTitle: {
+    marginBottom: 10,
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  radioButtonGroup: {
+    alignItems: "center",
+    width: "100%",
+  },
+  radioButtonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  radioButton: {
+    height: 24,
+    width: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  radioButtonInner: {
+    height: 12,
+    width: 12,
+    borderRadius: 6,
+    backgroundColor: "#4CAF50",
+  },
+  radioButtonLabel: {
+    fontSize: 16,
+  },
+  bookButton: {
+    marginTop: 15,
     padding: 10,
-    marginVertical: 10,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  bookButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

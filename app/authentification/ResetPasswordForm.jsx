@@ -1,26 +1,26 @@
 // ResetPasswordForm.js
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, ScrollView } from 'react-native';
-import { TextInput, Button, Card, Paragraph } from 'react-native-paper';
+import React, { useState } from "react";
+import { View, StyleSheet, Text, ScrollView } from "react-native";
+import { TextInput, Button, Card, Paragraph } from "react-native-paper";
 
 const ResetPasswordForm = ({ route }) => {
-  const [newPassword, setNewPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [newPassword, setNewPassword] = useState("");
+  const [message, setMessage] = useState("");
   const { token } = route.params;
 
   const handleResetPassword = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/users/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword })
+      const response = await fetch("http://192.168.137.91:3000/api/users/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword }),
       });
 
       const data = await response.text();
       setMessage(data);
     } catch (error) {
-      console.error('Error:', error);
-      setMessage('An error occurred. Please try again.');
+      console.error("Error:", error);
+      setMessage("An error occurred. Please try again.");
     }
   };
 
@@ -42,7 +42,7 @@ const ResetPasswordForm = ({ route }) => {
               outlineStyle={{ borderWidth: 0 }}
             />
             <Paragraph style={styles.errorMessage}>{message}</Paragraph>
-            <View style={{ alignItems: 'center' }}>
+            <View style={{ alignItems: "center" }}>
               <Button mode="contained" onPress={handleResetPassword} style={styles.button}>
                 Reset Password
               </Button>

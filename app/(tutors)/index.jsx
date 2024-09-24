@@ -2,14 +2,17 @@ import React, { useState } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Appbar, Title } from "react-native-paper";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import RNPickerSelect from "react-native-picker-select";
+import { SearchBar } from "react-native-elements";
 
 const Tutorbook = () => {
   const router = useRouter();
   const { topic } = useLocalSearchParams();
   const [selectedMajor, setSelectedMajor] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+  const [search, setSearch] = useState("");
+  const [showSearchBar, setShowSearchBar] = useState(false);
 
   const profiles = [
     {
@@ -53,8 +56,16 @@ const Tutorbook = () => {
     },
   ];
 
-  const filteredProfiles = profiles.filter((profile) => profile.major === topic);
-  const filteredRated = rated.filter((profile) => profile.major === topic);
+  const handleSearchChange = (text) => {
+    setSearch(text);
+  };
+
+  const filteredProfiles = profiles.filter(
+    (profile) => profile.major === topic && profile.name.toLowerCase().includes(search.toLowerCase())
+  );
+  const filteredRated = rated.filter(
+    (profile) => profile.major === topic && profile.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleSelectTutor = (tutor) => {
     router.push({
@@ -72,10 +83,17 @@ const Tutorbook = () => {
     <ScrollView>
       <Appbar.Header style={styles.appBar}>
         <View style={styles.iconWrapper}>
-          <Appbar.Action icon="magnify" size={30} onPress={() => console.log("Search icon pressed")} />
-          <Text style={styles.iconText} className="font-bold">
-            User Connect
-          </Text>
+          <Appbar.Action
+            icon="magnify"
+            size={30}
+            // onPress={() => setShowSearchBar(!showSearchBar)}
+            onPress={() => router.push("/userconnect")}
+          />
+          <TouchableOpacity>
+            <Text style={styles.iconText} className="font-bold">
+              User Connect
+            </Text>
+          </TouchableOpacity>
         </View>
         <Appbar.Content title="" />
         <Text style={styles.appBarTitle} className="font-extrabold text-3xl">
@@ -89,9 +107,23 @@ const Tutorbook = () => {
           </Text>
         </View>
       </Appbar.Header>
+
       <View style={styles.container}>
         <Text style={styles.text}>Welcome to the awesome and</Text>
         <Text style={styles.text}>intertwining world of {topic}</Text>
+        <View style={styles.search}>
+          <SearchBar
+            placeholder="Search a tutor..."
+            platform="default"
+            containerStyle={styles.searchBarContainer}
+            inputContainerStyle={styles.searchInputContainer}
+            inputStyle={styles.searchInput}
+            value={search}
+            onChangeText={handleSearchChange}
+            showLoading={false}
+          />
+        </View>
+
         <Title style={styles.title}>Featured:</Title>
         <View style={styles.iconContainer}>
           <TouchableOpacity style={styles.iconButton}>
@@ -133,13 +165,7 @@ const Tutorbook = () => {
         {/* Tutors profile below: */}
         <View style={styles.profileContainer}>
           {filteredProfiles.map((profile, index) => (
-            <TouchableOpacity
-              style={styles.profile}
-              key={index}
-              onPress={() => {
-                handleSelectTutor(profile);
-              }}
-            >
+            <TouchableOpacity style={styles.profile} key={index} onPress={() => handleSelectTutor(profile)}>
               <Image source={{ uri: profile.image }} style={styles.profileImage} />
               <Text style={styles.profileName}>{profile.name}</Text>
               <Text style={styles.profileDetails}>{profile.major}</Text>
@@ -190,7 +216,8 @@ const styles = StyleSheet.create({
   },
   iconWrapper: {
     flexDirection: "column",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
+    gap: 6,
     alignItems: "center",
     paddingVertical: 6,
     paddingHorizontal: 10,
@@ -213,6 +240,35 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontWeight: "400",
     color: "black",
+  },
+  search: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    borderRadius: 25,
+    backgroundColor: "#f0f0f0", // Light gray background for search bar
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginVertical: 10, // Add some margin to separate from other content
+  },
+  searchBarContainer: {
+    flex: 1,
+    backgroundColor: "transparent", // Transparent background for search bar container
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    paddingHorizontal: 0,
+  },
+  searchInputContainer: {
+    backgroundColor: "#ccc", // Gray background for input
+    borderRadius: 20,
+    height: 40,
+  },
+  searchInput: {
+    fontSize: 16,
+    padding: 10,
+  },
+  icon: {
+    marginHorizontal: 5,
   },
   iconContainer: {
     flexDirection: "row",
@@ -256,7 +312,7 @@ const styles = StyleSheet.create({
   profileDetails: {
     fontSize: 16,
     color: "black",
-    fontFamily: "Georgia",
+    // fontFamily: "Arial",
   },
 });
 

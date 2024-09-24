@@ -13,5 +13,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "app/authentification/RegisterForm.tsx", "app/(tabs)/index.tsx", "app/(tabs)/upload.js"  ]
+, "app/authentification/RegisterForm.jsx", "app/(tabs)/index.jsx", "app/(tabs)/upload.js", "app/(tabs)/_layout.jsx", "app/(tabs)/Mr. Tutor.jsx", "app/chatspot/chatspot.jsx", "app/_layout.jsx", "app/authentification/LoginForm.jsx", "app/authentification/ResetPasswordForm.jsx"  ]
 }

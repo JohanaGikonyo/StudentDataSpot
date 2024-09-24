@@ -1,31 +1,23 @@
 import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { TextInput, Button, Card, Paragraph, Appbar } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 
-const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess }) => {
+const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSuccess }) => {
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-
   const handleLogin = async () => {
     setLoading(true); // Start loading
     try {
       //below use your computer's ip address not the localhost
-      const response = await fetch('http://192.168.43.5:3000/api/users/login', {
-        method: 'POST',
+      const response = await fetch("http://192.168.137.91:3000/api/users/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -39,17 +31,17 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess
       const data = await response.json();
       const { token } = data;
 
-      console.log('Token:', token);
+      console.log("Token:", token);
       // Handle the token (e.g., save it to AsyncStorage or navigate to another screen)
-      setMessage('Login successful!');
+      setMessage("Login successful!");
 
       onLoginSuccess(); // Indicate successful login
 
       // Navigate to the main page
-      navigation.navigate('(tabs)');
+      navigation.navigate("(tabs)");
     } catch (error) {
-      console.error('Error logging in:', error);
-      setMessage('Error logging in. Please try again.');
+      console.error("Error logging in:", error);
+      setMessage("Error logging in. Please try again.");
     } finally {
       setLoading(false); // End loading
     }
@@ -57,23 +49,23 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess
 
   const handleForgotPassword = async () => {
     if (!email) {
-      setMessage('Please enter your email');
+      setMessage("Please enter your email");
       return;
     }
 
     setLoading(true); // Start loading
     try {
-      const response = await fetch('http://192.168.43.5:3000/api/users/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+      const response = await fetch("http://192.168.137.91:3000/api/users/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.text();
       setMessage(data);
     } catch (error) {
-      console.error('Error:', error);
-      setMessage('An error occurred. Please try again.');
+      console.error("Error:", error);
+      setMessage("An error occurred. Please try again.");
     } finally {
       setLoading(false); // End loading
     }
@@ -88,10 +80,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess
       </Appbar.Header>
       <View style={styles.horizontalLine} />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        overScrollMode="never"
-      >
+      <ScrollView showsVerticalScrollIndicator={false} overScrollMode="never">
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.title}>Login</Text>
@@ -122,8 +111,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess
             <View style={{ alignItems: "flex-start" }}>
               <TouchableOpacity onPress={handleForgotPassword}>
                 <Text style={styles.forgotPassword}>
-                  Forgot Password?{" "}
-                  <Text style={{ color: "green" }}>Click Here</Text>
+                  Forgot Password? <Text style={{ color: "green" }}>Click Here</Text>
                 </Text>
               </TouchableOpacity>
 
@@ -142,7 +130,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister,onLoginSuccess
                 style={styles.button}
                 disabled={loading} // Disable button while loading
               >
-                {loading ? <ActivityIndicator color="#fff" /> : "Login"}
+                {loading ? <ActivityIndicator color="#2337e6" /> : "Login"}
               </Button>
             </View>
           </Card.Content>
