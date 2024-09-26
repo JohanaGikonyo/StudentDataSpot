@@ -2,19 +2,24 @@ import React, { useState } from "react";
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { TextInput, Button, Card, Paragraph, Appbar } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Add this for token storage
+import { useUser } from "@/store/userStore";
+import { useRouter } from "expo-router";
 const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSuccess }) => {
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const { setUser } = useUser();
+  const router = useRouter();
   const handleLogin = async () => {
     setLoading(true); // Start loading
+    setMessage(""); // Reset message before new attempt
+
     try {
-      //below use your computer's ip address not the localhost
-      const response = await fetch("http://192.168.137.91:3000/api/users/login", {
+      // Make sure to use the correct IP address of your server if testing on device
+      const response = await fetch("http://localhost:3000/api/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -28,17 +33,27 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSucces
         return;
       }
 
-      const data = await response.json();
-      const { token } = data;
+      const data = await response.json(); // Properly parse JSON response
+      const { token, user } = data; // Extract token and user from response
 
       console.log("Token:", token);
-      // Handle the token (e.g., save it to AsyncStorage or navigate to another screen)
+      console.log(JSON.stringify(user));
+
+      // Handle token and user data (store them for later use)
+      await AsyncStorage.setItem("token", token); // Use AsyncStorage for storing token
+      await AsyncStorage.setItem("user", JSON.stringify(user));
+
+      await setUser(JSON.stringify(user)); // Update user store with user data
       setMessage("Login successful!");
 
-      onLoginSuccess(); // Indicate successful login
+      onLoginSuccess(); // Trigger any additional login success actions
 
-      // Navigate to the main page
-      navigation.navigate("(tabs)");
+      // Clear fields after successful login
+      setEmail("");
+      setPassword("");
+
+      // Navigate to the main tab page
+      router.push("/");
     } catch (error) {
       console.error("Error logging in:", error);
       setMessage("Error logging in. Please try again.");
@@ -55,7 +70,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSucces
 
     setLoading(true); // Start loading
     try {
-      const response = await fetch("http://192.168.137.91:3000/api/users/forgot-password", {
+      const response = await fetch("http://localhost:3000/api/users/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -115,11 +130,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSucces
                 </Text>
               </TouchableOpacity>
 
-              <Button
-                mode="text"
-                onPress={navigateToRegister}
-                // style={styles.registerButton}
-              >
+              <Button mode="text" onPress={navigateToRegister}>
                 Don't have an account? Register
               </Button>
             </View>
@@ -184,13 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ccc",
   },
   forgotPassword: {
-    // textAlign: "center",
     marginLeft: 10,
-    marginTop: 10,
-    textDecorationLine: "none",
-  },
-  registerButton: {
-    // textAlign: "center",
     marginTop: 10,
   },
   errorMessage: {

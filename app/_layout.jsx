@@ -10,6 +10,7 @@ export default function Layout() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(tutors)" options={{ headerShown: false }} />
+      <Stack.Screen name="authentification/LoginForm" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="fields/field" options={{ headerShown: false }} />

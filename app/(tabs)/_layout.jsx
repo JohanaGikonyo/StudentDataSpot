@@ -1,52 +1,18 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Image } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { useState, useEffect } from "react";
 import { AntDesign } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
-import { FontAwesome5 } from "@expo/vector-icons";
 import { Appbar } from "react-native-paper";
 import { useKeyboard } from "../../components/usekeyboard";
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useUser } from "@/store/userStore";
+
 export default function TabLayout() {
   const router = useRouter();
   const keyboardShown = useKeyboard();
-  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Function to retrieve the user ID from AsyncStorage
-  const retrieveUserId = async () => {
-    try {
-      const userId = await AsyncStorage.getItem("@user_id");
-      return userId;
-    } catch (error) {
-      console.error("Error retrieving user ID:", error);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      const userId = await retrieveUserId(); // Get user ID from storage
-
-      if (!userId) {
-        console.error("User ID not found");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await axios.get(`http://192.168.43.5:3000/api/user/profile/${userId}`);
-        setUserProfile(response.data);
-      } catch (error) {
-        console.error("Failed to fetch user profile", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
+  const { user } = useUser(); // Assuming user is retrieved from a global state or context
 
   // Function to get initials from a user's name
   const getInitials = (name) => {
@@ -56,9 +22,17 @@ export default function TabLayout() {
     return initials.toUpperCase();
   };
 
+  // Show loading while user data is being fetched
+  useEffect(() => {
+    if (user) {
+      setLoading(false); // Set loading to false once user data is available
+    }
+  }, [user]);
+
   if (loading) {
     return <Text>Loading...</Text>; // Placeholder while data is loading
   }
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <Tabs
@@ -73,7 +47,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />, // Change to home icon
+            tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
             title: "Home",
             header: () => (
               <Appbar.Header style={styles.header}>
@@ -83,70 +57,25 @@ export default function TabLayout() {
                 </View>
                 <View style={styles.headerRight}>
                   <TouchableOpacity style={styles.profileButton} onPress={() => router.push("/profile/user")}>
-                    {userProfile?.profileImage ? (
+                    {user?.profileImage ? ( // Use user.profileImage directly
                       <Image
-                        source={{ uri: `http://192.168.43.5:3000/${userProfile.profileImage}` }}
+                        source={{ uri: `http://localhost:3000/uploads/${user.profileImage}` }}
+                        // Use user.profileImage
                         style={styles.profileImage}
                       />
                     ) : (
                       <View style={[styles.profileImage, styles.initialsContainer]}>
-                        <Text style={styles.initials}>{getInitials(userProfile?.name || "Unknown User")}</Text>
+                        <Text style={styles.initials}>{getInitials(user?.name || user.email)}</Text>
                       </View>
                     )}
-                    <Text style={styles.profileText}>My Profile</Text>
+                    <Text style={styles.profileText}>{user?.name || "User"}</Text>
                   </TouchableOpacity>
                 </View>
-
-                {/* <View style={styles.headerRight}>
-                  <TouchableOpacity style={styles.profileButton} onPress={() => router.push("/profile/user")}>
-                    <FontAwesome size={28} name="user-circle" color="black" />
-                    <Text style={styles.profileText}>My Profile</Text>
-                  </TouchableOpacity>
-                </View> */}
               </Appbar.Header>
             ),
           }}
         />
-        <Tabs.Screen
-          name="Mr. Tutor"
-          options={{
-            title: "Mr. Tutor",
-            tabBarIcon: ({ color }) => <AntDesign size={28} name="message1" color={color} />,
-            header: () => (
-              <Appbar.Header style={styles.header}>
-                <Appbar.BackAction size={30} onPress={() => router.push("/(tabs)")} />
-                <Appbar.Content title="Mr. Tutor" titleStyle={styles.headerContentTitle} />
-                <Appbar.Action icon="menu" onPress={() => alert("Menu")} />
-              </Appbar.Header>
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="upload"
-          options={{
-            tabBarIcon: ({ color }) => <FontAwesome size={28} name="plus" color={color} />,
-            header: () => (
-              <Appbar.Header style={styles.header}>
-                <Appbar.BackAction onPress={() => router.push("/(tabs)")} />
-                <Appbar.Content title="Upload" titleStyle={styles.headerContentTitle} />
-                <Appbar.Action icon="account-circle" onPress={() => router.push("/profile/user")} />
-              </Appbar.Header>
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="tutorhub"
-          options={{
-            tabBarIcon: ({ color }) => <FontAwesome5 name="rocketchat" size={24} color={color} />,
-            header: () => (
-              <Appbar.Header style={styles.header}>
-                <Appbar.Action icon="magnify" size={30} onPress={() => console.log("Search icon pressed")} />
-                <Appbar.Content title="TutorHub" titleStyle={styles.headerContentTitle} />
-                <Appbar.Action icon="account-circle" onPress={() => router.push("/profile/user")} />
-              </Appbar.Header>
-            ),
-          }}
-        />
+        {/* Other Tabs... */}
       </Tabs>
     </KeyboardAvoidingView>
   );

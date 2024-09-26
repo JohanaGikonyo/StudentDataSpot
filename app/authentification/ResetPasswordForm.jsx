@@ -10,7 +10,7 @@ const ResetPasswordForm = ({ route }) => {
 
   const handleResetPassword = async () => {
     try {
-      const response = await fetch("http://192.168.137.91:3000/api/users/reset-password", {
+      const response = await fetch("http://192.168.137.129:3000/api/users/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword }),

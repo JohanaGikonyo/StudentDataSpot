@@ -7,7 +7,7 @@ import io from "socket.io-client";
 const Upload = () => {
   const [video, setVideo] = useState(null);
   const [title, setTitle] = useState("");
-  const socket = io("http://192.168.137.91:3000"); // Adjust the URL to match your server
+  const socket = io("http://192.168.137.129:3000");
 
   useEffect(() => {
     const getPermissions = async () => {
@@ -55,7 +55,7 @@ const Upload = () => {
     });
 
     try {
-      await axios.post("http://192.168.137.91:3000/api/videos/upload", formData, {
+      await axios.post("http://192.168.137.129:3000/api/videos/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

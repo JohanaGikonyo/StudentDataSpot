@@ -5,11 +5,12 @@ import { Picker } from "@react-native-picker/picker";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
-import { useNavigation } from "@react-navigation/native";
+import { useUser } from "@/store/userStore";
+import { useRouter } from "expo-router";
 
 const RegisterForm = ({ navigateToLogin }) => {
-  const navigation = useNavigation();
-
+  const router = useRouter();
+  const { setUser } = useUser();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -23,7 +24,7 @@ const RegisterForm = ({ navigateToLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [photo, setPhoto] = useState(null);
-  const [loading, setLoading] = useState(false); // Loading state
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
@@ -32,11 +33,17 @@ const RegisterForm = ({ navigateToLogin }) => {
     }
 
     if (!name || !email || !password) {
-      setMessage("Name, email, and password are required.");
+      setMessage("Name, email, password");
       return;
     }
 
-    setLoading(true); // Start loading
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const formData = new FormData();
@@ -52,14 +59,21 @@ const RegisterForm = ({ navigateToLogin }) => {
       formData.append("password", password);
 
       if (photo) {
+        const fileName = photo.uri.split("/").pop();
+        const fileType = photo.uri.match(/\.\w+$/) ? photo.uri.match(/\.\w+$/)[0] : "";
         formData.append("photo", {
           uri: photo.uri,
-          name: `photo_${Date.now()}.jpg`,
-          type: photo.type,
+          name: fileName,
+          type: `image/${fileType.replace(".", "")}`,
         });
       }
 
-      const response = await axios.post("http://192.168.137.91:3000/api/users/register", formData, {
+      // Console log the form data for debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      const response = await axios.post("http://localhost:3000/api/users/register", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -67,18 +81,25 @@ const RegisterForm = ({ navigateToLogin }) => {
 
       if (response.status === 201) {
         setMessage("User registered successfully!");
-        navigation.navigate("(tabs)");
+        const token = response.data.token; // Assuming the response contains a token
+        const user = response.data.user; // Assuming the response contains user data
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        setUser(JSON.stringify(user)); // Assuming setUser takes an object
+        router.push("/");
       } else {
-        setMessage("Error registering user");
+        setMessage("Error registering user: " + response.data.message);
       }
     } catch (error) {
       console.error("Error registering user:", error.response ? error.response.data : error.message);
-      setMessage("Error registering user");
+      setMessage("Error registering user: " + (error.response ? error.response.data.message : error.message));
     } finally {
-      setLoading(false); // End loading
+      setLoading(false);
     }
   };
 
+  // replaced this fuction below
   const selectPhoto = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -86,7 +107,6 @@ const RegisterForm = ({ navigateToLogin }) => {
         allowsEditing: false,
         quality: 1,
       });
-
       if (!result.canceled) {
         setPhoto(result.assets[0]);
       } else {
@@ -126,6 +146,7 @@ const RegisterForm = ({ navigateToLogin }) => {
               </TouchableOpacity>
             </View>
 
+            {/* Input Fields */}
             <Text style={styles.label}>Name</Text>
             <TextInput
               value={name}
@@ -159,6 +180,7 @@ const RegisterForm = ({ navigateToLogin }) => {
               outlineColor="transparent"
             />
 
+            {/* Additional Fields */}
             <View style={styles.row}>
               <View style={styles.column}>
                 <Text style={styles.label}>Institution</Text>
@@ -171,14 +193,42 @@ const RegisterForm = ({ navigateToLogin }) => {
                   outlineColor="transparent"
                 />
               </View>
-
-              <View style={styles.column}>
-                <Text style={styles.label}>Graduation Year</Text>
+            </View>
+            {/* <View style={styles.datePickerContainer}>
                 <View style={styles.pickerWrapper}>
                   <Picker
-                    selectedValue={graduationYear}
-                    onValueChange={(itemValue) => setGraduationYear(itemValue)}
+                    selectedValue={day}
+                    onValueChange={(itemValue) => setDay(itemValue)}
                     style={styles.picker}
+                    prompt="Select Day"
+                  >
+                    <Picker.Item label="Day" value="" />
+                    {days.map((d) => (
+                      <Picker.Item key={d} label={d.toString()} value={d.toString()} />
+                    ))}
+                  </Picker>
+                </View>
+
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={month}
+                    onValueChange={(itemValue) => setMonth(itemValue)}
+                    style={styles.picker}
+                    prompt="Select Month"
+                  >
+                    <Picker.Item label="Month" value="" />
+                    {months.map((m) => (
+                      <Picker.Item key={m} label={m.toString()} value={m.toString()} />
+                    ))}
+                  </Picker>
+                </View>
+
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={year}
+                    onValueChange={(itemValue) => setYear(itemValue)}
+                    style={styles.picker}
+                    prompt="Select Year"
                   >
                     <Picker.Item label="Year" value="" />
                     {years.map((y) => (
@@ -186,6 +236,50 @@ const RegisterForm = ({ navigateToLogin }) => {
                     ))}
                   </Picker>
                 </View>
+              </View>
+            </View> */}
+
+            {/* <Text style={styles.label}>Graduation Date</Text>
+            <View style={styles.datePickerContainer}>
+              <View style={styles.pickerWrapper}>
+                <Picker selectedValue={day} onValueChange={setDay} style={styles.picker}>
+                  <Picker.Item label="Day" value="" />
+                  {days.map((d) => (
+                    <Picker.Item key={d} label={d.toString()} value={d.toString()} />
+                  ))}
+                </Picker>
+              </View>
+              <View style={styles.pickerWrapper}>
+                <Picker selectedValue={month} onValueChange={setMonth} style={styles.picker}>
+                  <Picker.Item label="Month" value="" />
+                  {months.map((m) => (
+                    <Picker.Item key={m} label={m.toString()} value={m.toString()} />
+                  ))}
+                </Picker>
+              </View>
+              <View style={styles.pickerWrapper}>
+                <Picker selectedValue={year} onValueChange={setYear} style={styles.picker}>
+                  <Picker.Item label="Year" value="" />
+                  {years.map((y) => (
+                    <Picker.Item key={y} label={y.toString()} value={y.toString()} />
+                  ))}
+                </Picker>
+              </View>
+            </View> */}
+
+            <View style={styles.column}>
+              <Text style={styles.label}>Graduation Year</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={graduationYear}
+                  onValueChange={(itemValue) => setGraduationYear(itemValue)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Year" value="" />
+                  {years.map((y) => (
+                    <Picker.Item key={y} label={y.toString()} value={y.toString()} />
+                  ))}
+                </Picker>
               </View>
             </View>
 
@@ -232,9 +326,9 @@ const RegisterForm = ({ navigateToLogin }) => {
               value={password}
               onChangeText={setPassword}
               style={styles.input}
-              secureTextEntry
               mode="outlined"
               theme={{ roundness: 10 }}
+              secureTextEntry
               outlineColor="transparent"
             />
 
@@ -243,31 +337,29 @@ const RegisterForm = ({ navigateToLogin }) => {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               style={styles.input}
-              secureTextEntry
               mode="outlined"
               theme={{ roundness: 10 }}
+              secureTextEntry
               outlineColor="transparent"
             />
-            <Paragraph style={styles.message}>{message}</Paragraph>
 
-            <View style={styles.buttonContainer}>
-              {loading ? (
-                <ActivityIndicator size="large" color="#6200ee" />
-              ) : (
-                <>
-                  <Button mode="contained" onPress={handleRegister} style={styles.button}>
-                    Create Account
-                  </Button>
-                  <View style={styles.loginContainer}>
-                    <Text style={styles.orText}>OR</Text>
-                    <Button mode="contained" onPress={navigateToLogin} style={styles.button}>
-                      Login
-                    </Button>
-                  </View>
-                </>
-              )}
-            </View>
+            {message && <Text style={styles.errorMessage}>{message}</Text>}
           </Card.Content>
+
+          <Card.Actions style={styles.actions}>
+            <Button
+              mode="contained"
+              onPress={handleRegister}
+              loading={loading}
+              disabled={loading}
+              style={styles.registerButton}
+            >
+              {loading ? <ActivityIndicator color="#fff" /> : "Register"}
+            </Button>
+            <Button onPress={navigateToLogin} style={styles.loginButton}>
+              Login
+            </Button>
+          </Card.Actions>
         </Card>
       </ScrollView>
     </View>
@@ -279,120 +371,98 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
-  appBar: {
-    // backgroundColor: "#6200ee",
-    // color: #faf5f5,
-  },
-  appBarTitle: {
-    // color: "#fff",
-    fontWeight: "bold",
-    fontSize: 20,
-  },
-  horizontalLine: {
-    height: 1,
-    backgroundColor: "#ddd",
-    marginVertical: 16,
-  },
-  card: {
-    margin: 16,
+  scrollView: {
     padding: 16,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    elevation: 0,
+    paddingBottom: 40,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    justifyContent: "space-between",
   },
   title: {
-    fontWeight: "bold",
     fontSize: 24,
-    flex: 1,
+    fontWeight: "bold",
   },
   photoContainer: {
-    width: 100,
-    height: 100,
-    justifyContent: "center",
     alignItems: "center",
-    borderRadius: 50,
-    backgroundColor: "#e0e0e0",
-    borderWidth: 0,
+    justifyContent: "center",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 1,
     borderColor: "#ccc",
-    marginLeft: 16,
+    overflow: "hidden",
   },
   photo: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: "100%",
+    height: "100%",
+    borderRadius: 30,
   },
   iconContainer: {
-    justifyContent: "center",
     alignItems: "center",
   },
   uploadText: {
-    marginTop: 8,
-    color: "#000",
-    fontSize: 14,
-  },
-  label: {
-    marginBottom: 8,
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#333",
+    fontSize: 12,
+    color: "#666",
   },
   input: {
-    marginBottom: 12,
-    backgroundColor: "#f5f5f5",
-  },
-  button: {
     marginVertical: 8,
-    backgroundColor: "#6200ee",
   },
-  scrollView: {
-    paddingBottom: 16,
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginVertical: 4,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  column: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  picker: {
+    height: 50,
   },
   datePickerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
   },
-  pickerWrapper: {
-    flex: 1,
-    marginHorizontal: 4,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 4,
-    overflow: "hidden",
+  errorMessage: {
+    color: "red",
+    marginVertical: 8,
   },
-  picker: {
-    flex: 1,
-  },
-  row: {
+  actions: {
     flexDirection: "row",
-    marginBottom: 16,
-  },
-  column: {
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  buttonContainer: {
-    alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 16,
   },
-  loginContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
+  registerButton: {
+    flex: 1,
+    marginRight: 8,
   },
-  orText: {
-    fontWeight: "bold",
-    fontSize: 16,
-    marginHorizontal: 16,
+  loginButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#6200ee",
   },
-  message: {
-    color: "red",
-    textAlign: "center",
-    marginBottom: 16,
+  appBar: {
+    backgroundColor: "#6200ee",
+  },
+  appBarTitle: {
+    color: "#fff",
+  },
+  horizontalLine: {
+    height: 1,
+    backgroundColor: "#ccc",
+    marginVertical: 8,
   },
 });
 
