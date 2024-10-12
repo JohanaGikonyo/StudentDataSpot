@@ -17,7 +17,7 @@ import * as ImagePicker from "expo-image-picker"; // For picking profile images
 import axios from "redaxios"; // Axios alternative for HTTP requests
 
 const Profile = () => {
-  const { user, updateUser } = useUser();
+  const { user, setUser } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [updatedName, setUpdatedName] = useState(user.name);
   const [updatedEmail, setUpdatedEmail] = useState(user.email);
@@ -31,49 +31,62 @@ const Profile = () => {
   const router = useRouter();
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+    try {
+      const response = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+        base64: true, // Ensure base64 is included in the response
+      });
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+      if (!response.canceled) {
+        // Access the first item in the assets array to get the URI
+        const asset = response.assets ? response.assets[0] : null;
+
+        if (asset) {
+          const base64Image = `data:${asset.mimeType};base64,${asset.base64}`; // Create a base64 string
+          setProfileImage(base64Image); // Store base64 image string
+        } else {
+          console.log("No assets found in the response");
+        }
+      }
+    } catch (error) {
+      console.log("Error picking image:", error);
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    e.preventDefault();
     setLoading(true);
     try {
       const formData = new FormData();
+
+      // Append the profile details
       formData.append("name", updatedName);
       formData.append("email", updatedEmail);
       formData.append("year", updatedYear);
       formData.append("course", updatedCourse);
-      formData.append("institution", updatedInstitution); // Include institution
-      formData.append("graduationYear", updatedGraduationYear); // Include graduation year
-      formData.append("phone", updatedPhone); // Include phone
+      formData.append("institution", updatedInstitution);
+      formData.append("graduationYear", updatedGraduationYear);
+      formData.append("phone", updatedPhone);
+      formData.append("photo", profileImage);
 
-      if (profileImage) {
-        const fileName = profileImage.split("/").pop();
-        const fileType = profileImage.match(/\.\w+$/) ? profileImage.match(/\.\w+$/)[0] : "";
-        formData.append("profileImage", {
-          uri: profileImage,
-          name: fileName,
-          type: `image/${fileType.replace(".", "")}`,
-        });
+      // Log each key/value pair for verification
+      for (let pair of formData.entries()) {
+        console.log(`am sending this data ${pair[0]}: ${pair[1]}`);
       }
-
       const token = await AsyncStorage.getItem("token");
-      const response = await axios.put("http://localhost:3000/api/users/updateProfile", formData, {
+      const response = await axios.post(`http://192.168.137.201:3000/api/users/updateProfile/${user.id}`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          // "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
 
-      updateUser(response.data.user);
+      await AsyncStorage.setItem("user", JSON.stringify(response.data.user));
+
+      console.log(response.data.user);
+
       setIsEditing(false);
       Alert.alert("Profile updated", "Your profile has been updated successfully.");
       router.push("/");
@@ -225,7 +238,7 @@ const styles = StyleSheet.create({
   detailsContainer: {
     width: "100%",
     marginBottom: 20,
-    alignItems: "center", // Center details horizontally
+    alignItems: "start", // Center details horizontally
   },
   label: {
     fontSize: 16,

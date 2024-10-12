@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Image } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { AntDesign } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { Appbar } from "react-native-paper";
 import { useKeyboard } from "../../components/usekeyboard";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useUser } from "@/store/userStore";
 
 export default function TabLayout() {
@@ -33,6 +33,19 @@ export default function TabLayout() {
     return <Text>Loading...</Text>; // Placeholder while data is loading
   }
 
+  const renderProfileImage = () => (
+    <TouchableOpacity style={styles.profileButton} onPress={() => router.push("/profile/user")}>
+      {user?.profileImage ? (
+        <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
+      ) : (
+        <View style={[styles.profileImage, styles.initialsContainer]}>
+          <Text style={styles.initials}>{getInitials(user?.name || user.email)}</Text>
+        </View>
+      )}
+      <Text style={styles.profileText}>{user?.name || "User"}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <Tabs
@@ -55,27 +68,52 @@ export default function TabLayout() {
                   <FontAwesome size={28} name="youtube-play" color="black" />
                   <Text style={styles.headerTitle}>Tutor Book</Text>
                 </View>
-                <View style={styles.headerRight}>
-                  <TouchableOpacity style={styles.profileButton} onPress={() => router.push("/profile/user")}>
-                    {user?.profileImage ? ( // Use user.profileImage directly
-                      <Image
-                        source={{ uri: `http://localhost:3000/uploads/${user.profileImage}` }}
-                        // Use user.profileImage
-                        style={styles.profileImage}
-                      />
-                    ) : (
-                      <View style={[styles.profileImage, styles.initialsContainer]}>
-                        <Text style={styles.initials}>{getInitials(user?.name || user.email)}</Text>
-                      </View>
-                    )}
-                    <Text style={styles.profileText}>{user?.name || "User"}</Text>
-                  </TouchableOpacity>
-                </View>
+                <View style={styles.headerRight}>{renderProfileImage()}</View>
               </Appbar.Header>
             ),
           }}
         />
-        {/* Other Tabs... */}
+        <Tabs.Screen
+          name="Mr. Tutor"
+          options={{
+            title: "Mr. Tutor",
+            tabBarIcon: ({ color }) => <Feather size={28} name="message-circle" color={color} />,
+            header: () => (
+              <Appbar.Header style={styles.header}>
+                <Appbar.BackAction size={30} onPress={() => router.push("/(tabs)")} />
+                <Appbar.Content title="Mr. Tutor" titleStyle={styles.headerContentTitle} />
+                {/* <Appbar.Action icon="menu" onPress={() => alert("Menu")} /> */}
+                {renderProfileImage()}
+              </Appbar.Header>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="upload"
+          options={{
+            tabBarIcon: ({ color }) => <FontAwesome size={28} name="plus" color={color} />,
+            header: () => (
+              <Appbar.Header style={styles.header}>
+                <Appbar.BackAction onPress={() => router.push("/(tabs)")} />
+                <Appbar.Content title="Upload" titleStyle={styles.headerContentTitle} />
+                {renderProfileImage()}
+              </Appbar.Header>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="tutorhub"
+          options={{
+            tabBarIcon: ({ color }) => <FontAwesome5 name="rocketchat" size={24} color={color} />,
+            header: () => (
+              <Appbar.Header style={styles.header}>
+                <Appbar.Action icon="magnify" size={30} onPress={() => console.log("Search icon pressed")} />
+                <Appbar.Content title="TutorHub" titleStyle={styles.headerContentTitle} />
+                {renderProfileImage()}
+              </Appbar.Header>
+            ),
+          }}
+        />
       </Tabs>
     </KeyboardAvoidingView>
   );

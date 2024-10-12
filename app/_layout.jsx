@@ -3,12 +3,15 @@ import { Stack, useRouter } from "expo-router";
 import { Appbar } from "react-native-paper";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
-
+import { useUser } from "../store/userStore";
 export default function Layout() {
+  const { user } = useUser();
   const router = useRouter();
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="chatspot/Messaging" options={{ headerShown: false }} />
+
       <Stack.Screen name="(tutors)" options={{ headerShown: false }} />
       <Stack.Screen name="authentification/LoginForm" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />

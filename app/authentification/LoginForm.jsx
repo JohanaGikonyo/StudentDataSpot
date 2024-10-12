@@ -19,7 +19,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSucces
 
     try {
       // Make sure to use the correct IP address of your server if testing on device
-      const response = await fetch("http://localhost:3000/api/users/login", {
+      const response = await fetch("http://192.168.137.201:3000/api/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,9 +35,6 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSucces
 
       const data = await response.json(); // Properly parse JSON response
       const { token, user } = data; // Extract token and user from response
-
-      console.log("Token:", token);
-      console.log(JSON.stringify(user));
 
       // Handle token and user data (store them for later use)
       await AsyncStorage.setItem("token", token); // Use AsyncStorage for storing token
@@ -70,7 +67,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSucces
 
     setLoading(true); // Start loading
     try {
-      const response = await fetch("http://localhost:3000/api/users/forgot-password", {
+      const response = await fetch("http://192.168.137.201:3000/api/users/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

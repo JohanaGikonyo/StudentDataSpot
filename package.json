@@ -15,6 +15,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@atlaskit/avatar": "^21.15.2",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-community/masked-view": "^0.1.11",
@@ -45,6 +46,7 @@
     "react-native-gesture-handler": "~2.16.1",
     "react-native-get-random-values": "^1.11.0",
     "react-native-gifted-chat": "^2.4.0",
+    "react-native-image-crop-picker": "^0.41.2",
     "react-native-image-picker": "^7.1.2",
     "react-native-paper": "^5.12.3",
     "react-native-picker": "^4.3.7",

@@ -4,50 +4,32 @@ import { useRouter } from "expo-router";
 import { Appbar, Title } from "react-native-paper";
 import { FontAwesome } from "@expo/vector-icons";
 import { SearchBar } from "react-native-elements";
-
-// Define colors and backgrounds based on initials
-const avatarStyles = {
-  A: { backgroundColor: "#FF5733", color: "#FFFFFF" },
-  B: { backgroundColor: "#33FF57", color: "#FFFFFF" },
-  C: { backgroundColor: "#3357FF", color: "#FFFFFF" },
-  D: { backgroundColor: "#FF33A8", color: "#FFFFFF" },
-  E: { backgroundColor: "#FFD433", color: "#FFFFFF" },
-  F: { backgroundColor: "#FF33B5", color: "#FFFFFF" },
-  G: { backgroundColor: "#33FFF3", color: "#000000" },
-  H: { backgroundColor: "#FF7F33", color: "#FFFFFF" },
-  I: { backgroundColor: "#7F33FF", color: "#FFFFFF" },
-  J: { backgroundColor: "#FF8C33", color: "#FFFFFF" },
-  K: { backgroundColor: "#33FF8C", color: "#FFFFFF" },
-  L: { backgroundColor: "#FF3357", color: "#FFFFFF" },
-  M: { backgroundColor: "#FF338A", color: "#FFFFFF" },
-  N: { backgroundColor: "#33FF77", color: "#FFFFFF" },
-  O: { backgroundColor: "#A833FF", color: "#FFFFFF" },
-  P: { backgroundColor: "#FF33D4", color: "#FFFFFF" },
-  Q: { backgroundColor: "#33FFC4", color: "#000000" },
-  R: { backgroundColor: "#FF3333", color: "#FFFFFF" },
-  S: { backgroundColor: "#33B3FF", color: "#FFFFFF" },
-  T: { backgroundColor: "#FF8C33", color: "#FFFFFF" },
-  U: { backgroundColor: "#FF33B5", color: "#FFFFFF" },
-  V: { backgroundColor: "#C733FF", color: "#FFFFFF" },
-  W: { backgroundColor: "#FF9F33", color: "#FFFFFF" },
-  X: { backgroundColor: "#33FFD4", color: "#000000" },
-  Y: { backgroundColor: "#FF5E33", color: "#FFFFFF" },
-  Z: { backgroundColor: "#FF7F77", color: "#FFFFFF" },
-};
+import { useUser } from "../../store/userStore";
 
 const Users = () => {
+  const { user } = useUser();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [profiles, setProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const Skeleton = () => (
+    <View style={styles.skeletonCard}>
+      <View style={styles.skeletonAvatar} />
+      <Text>Please Wait...</Text>
+    </View>
+  );
 
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/users/getUsers"); // Replace with your actual API endpoint
+        const response = await fetch("http://localhost:3000/api/users/getUsers");
         const data = await response.json();
         setProfiles(data.users);
       } catch (error) {
         console.error("Error fetching profiles:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -58,7 +40,21 @@ const Users = () => {
     setSearch(text);
   };
 
-  const filteredProfiles = profiles.filter((profile) => profile.name.toLowerCase().includes(search.toLowerCase()));
+  const shuffleProfiles = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
+
+  const filteredProfiles = profiles.filter(
+    (profile) =>
+      profile.email !== user?.email &&
+      (profile.name.toLowerCase().includes(search.toLowerCase()) ||
+        profile.course.toLowerCase().includes(search.toLowerCase()))
+  );
+  const shuffledProfiles = shuffleProfiles(filteredProfiles);
 
   const handleSelectUser = (user) => {
     router.push({
@@ -72,6 +68,7 @@ const Users = () => {
         graduationYear: user.graduationYear,
         phone: user.phone,
         email: user.email,
+        photo: user.photo,
       },
     });
   };
@@ -91,7 +88,7 @@ const Users = () => {
   };
 
   return (
-    <ScrollView>
+    <View style={styles.container}>
       <Appbar.Header style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.push("/(tabs)")}>
@@ -101,48 +98,72 @@ const Users = () => {
         </View>
         <Appbar.Content title="" />
         <Text style={styles.headerTitle}>User Connect</Text>
-        <Appbar.Action icon="account-circle" onPress={() => router.push("/profile/user")} />
+        <TouchableOpacity style={styles.profileButton} onPress={() => router.push("/profile/user")}>
+          {user?.profileImage ? (
+            <Image source={{ uri: user.profileImage }} style={styles.profileUserImage} />
+          ) : (
+            <View style={[styles.profileImage, styles.initialsContainer]}></View>
+          )}
+        </TouchableOpacity>
       </Appbar.Header>
 
-      <View style={styles.container}>
-        <Text style={styles.introText}>Connect with a community of Students seeking knowledge</Text>
-        <SearchBar
-          placeholder="Search..."
-          platform="default"
-          containerStyle={styles.searchContainer}
-          inputContainerStyle={styles.searchInputContainer}
-          inputStyle={styles.searchInput}
-          value={search}
-          onChangeText={handleSearchChange}
-        />
-        <Title style={styles.sectionTitle}>Featured:</Title>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.innerContainer}>
+          <Text style={styles.introText}>Connect with a community of Students seeking knowledge</Text>
+          <SearchBar
+            placeholder="Search..."
+            platform="default"
+            containerStyle={styles.searchContainer}
+            inputContainerStyle={styles.searchInputContainer}
+            inputStyle={styles.searchInput}
+            value={search}
+            onChangeText={handleSearchChange}
+          />
+          <Title style={styles.sectionTitle}>Featured:</Title>
 
-        <View style={styles.profilesContainer}>
-          {filteredProfiles.length > 0 ? (
-            filteredProfiles.map((profile, index) => (
-              <TouchableOpacity style={styles.profileCard} key={index} onPress={() => handleSelectUser(profile)}>
-                {renderAvatar(profile.name, profile.profileImage)}
-                <Text style={styles.profileName}>{profile.name}</Text>
-                <Text style={styles.profileMajor}>{profile.course}</Text>
-                <Text style={styles.profileYear}>{profile.year}</Text>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Text style={styles.noDataText}>No profiles found</Text>
-          )}
+          <View style={styles.profilesContainer}>
+            {loading ? (
+              <Skeleton />
+            ) : shuffledProfiles.length > 0 ? (
+              shuffledProfiles.map((profile, index) => (
+                <TouchableOpacity style={styles.profileCard} key={index} onPress={() => handleSelectUser(profile)}>
+                  {renderAvatar(profile.name, profile.photo)}
+                  <Text style={styles.profileName}>{profile.name}</Text>
+                  <Text style={styles.profileMajor}>{profile.course}</Text>
+                  <Text style={styles.profileYear}>{profile.year}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={styles.noDataText}>No profiles found.</Text>
+            )}
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    marginTop: 60, // Adjust this value based on your header height
+  },
+  innerContainer: {
+    padding: 16,
+  },
   header: {
-    backgroundColor: "white",
+    backgroundColor: "#faf9f9",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 10,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   headerLeft: {
     flexDirection: "row",
@@ -160,9 +181,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: "50%",
     transform: [{ translateX: -60 }],
-  },
-  container: {
-    padding: 16,
   },
   introText: {
     fontSize: 18,
@@ -199,11 +217,25 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: "48%",
   },
+  profileButton: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  profileUserImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ccc",
+  },
   profileImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    marginBottom: 8,
+    width: 100,
+    height: 100,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ccc",
   },
   avatarContainer: {
     width: 96,
@@ -230,6 +262,18 @@ const styles = StyleSheet.create({
   noDataText: {
     fontSize: 16,
     color: "gray",
+  },
+  skeletonCard: {
+    alignItems: "center",
+    marginBottom: 16,
+    width: "48%",
+  },
+  skeletonAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#C0C0C0",
+    marginBottom: 8,
   },
 });
 

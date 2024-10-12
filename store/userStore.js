@@ -6,12 +6,9 @@ export const useUser = create((set) => ({
   // Set the user object
   setUser: (value) => set(() => ({ user: value })),
 
-  // Update specific fields of the user object
-  updateUser: (updatedFields) =>
-    set((state) => ({
-      user: {
-        ...state.user,
-        ...updatedFields,
-      },
-    })),
+  // // Update specific fields of the user object
+  // updateUser: (updatedFields) =>
+  //   set(() => ({
+  //     user: updatedFields,
+  //   })),
 }));

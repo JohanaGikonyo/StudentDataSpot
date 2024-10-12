@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, ScrollView } from "react-native";
 import React from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Appbar, Card } from "react-native-paper";

@@ -1,12 +1,14 @@
 import React, { useState, useCallback } from "react";
-import { View, TouchableOpacity, StyleSheet, Text } from "react-native";
-import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
-import Icon from "react-native-vector-icons/MaterialIcons";
-
+import { View, TouchableOpacity, StyleSheet, Text, ScrollView } from "react-native";
+import ChatList from "../chatspot/chatspot";
 const Tutor = () => {
-  <View>
-    <Text>Chat spot</Text>
-  </View>;
+  return (
+    <ScrollView>
+      <View>
+        <ChatList />
+      </View>
+    </ScrollView>
+  );
 };
 
 const styles = StyleSheet.create({

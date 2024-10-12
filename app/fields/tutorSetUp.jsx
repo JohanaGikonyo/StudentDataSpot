@@ -7,7 +7,9 @@ import * as ImagePicker from "react-native-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
 
-const TutorSetUp = ({ navigateToLogin }) => {
+import axios from "axios";
+
+const TutorSetUp = () => {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -16,41 +18,99 @@ const TutorSetUp = ({ navigateToLogin }) => {
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [institution, setInstitution] = useState("");
-  const [graduationYear, setGraduationYear] = useState("");
   const [course, setCourse] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [photo, setPhoto] = useState(null);
-  const [qualifications, setQualifications] = useState("");
+  const [qualifications, setQualifications] = useState(null);
 
+  // Select a photo from library
+  const selectPhoto = async () => {
+    const options = {
+      mediaType: "photo",
+      quality: 1,
+      includeBase64: true, // Convert to base64
+    };
+
+    ImagePicker.launchImageLibrary(options, (response) => {
+      if (response.assets && response.assets.length > 0) {
+        setPhoto(response.assets[0].base64); // Store base64 photo
+      }
+    });
+  };
+
+  // Handle document upload (qualifications)
   const handleUpload = async () => {
-    const result = await DocumentPicker.getDocumentAsync();
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "*/*", // Accept all types of documents
+    });
+
     if (result.type === "success") {
-      setQualifications(result.name);
+      setQualifications(result);
     }
   };
 
+  // Register tutor and upload data
   const handleRegister = async () => {
     if (password !== confirmPassword) {
       setMessage("Passwords do not match!!");
       return;
     }
-    router.push("/(tabs)");
-  };
 
-  const selectPhoto = () => {
-    const options = {
-      mediaType: "photo", // Limit to photos only
-      quality: 1, // High quality
-      includeBase64: false, // Set to true if you need base64 encoded image
+    const tutorData = {
+      name,
+      email,
+      phone,
+      institution,
+      course,
+      password,
+      graduationDate: `${year}-${month}-${day}`,
+      photo, // Base64 encoded image
+      qualifications: qualifications ? qualifications.uri : null, // Path to the uploaded document
     };
 
-    ImagePicker.launchImageLibrary(options, (response) => {
-      if (response.assets && response.assets.length > 0) {
-        setPhoto(response.assets[0]);
+    const formData = new FormData();
+    formData.append("name", tutorData.name);
+    formData.append("email", tutorData.email);
+    formData.append("phone", tutorData.phone);
+    formData.append("institution", tutorData.institution);
+    formData.append("course", tutorData.course);
+    formData.append("password", tutorData.password);
+    formData.append("graduationDate", tutorData.graduationDate);
+
+    // For photo as base64, send it directly without FormData
+    if (tutorData.photo) {
+      formData.append("photo", `data:image/jpeg;base64,${tutorData.photo}`);
+    }
+
+    // Add document (qualifications)
+    if (qualifications) {
+      formData.append("qualifications", {
+        uri: qualifications.uri,
+        name: qualifications.name,
+        type: qualifications.mimeType,
+      });
+    }
+
+    try {
+      console.log(formData);
+      const response = await axios.post("http://localhost:3000/api/tutors/register", formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.status === 201) {
+        setMessage("Registration successful!");
+        router.push("/(tutors)");
+      } else {
+        setMessage("Failed to register.");
       }
-    });
+    } catch (error) {
+      setMessage("Something went wrong! Please try again.");
+      console.error(error);
+    }
   };
 
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -73,7 +133,7 @@ const TutorSetUp = ({ navigateToLogin }) => {
               <Title style={styles.title}>Account Set-Up</Title>
               <TouchableOpacity onPress={selectPhoto} style={styles.photoContainer}>
                 {photo ? (
-                  <Image source={{ uri: photo.uri }} style={styles.photo} />
+                  <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photo} />
                 ) : (
                   <View style={styles.iconContainer}>
                     <Icon name="photo-camera" size={30} color="#000" />
@@ -86,122 +146,70 @@ const TutorSetUp = ({ navigateToLogin }) => {
             </View>
 
             <Text style={styles.label}>Name</Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-              mode="outlined"
-              theme={{ roundness: 20 }}
-              outlineStyle={{ borderWidth: 0 }}
-            />
+            <TextInput value={name} onChangeText={setName} style={styles.input} mode="outlined" />
 
             <Text style={styles.label}>Email address</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              style={styles.input}
-              mode="outlined"
-              theme={{ roundness: 20 }}
-              outlineStyle={{ borderWidth: 0 }}
-            />
+            <TextInput value={email} onChangeText={setEmail} style={styles.input} mode="outlined" />
 
             <Text style={styles.label}>Phone Number</Text>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              style={styles.input}
-              mode="outlined"
-              theme={{ roundness: 20 }}
-              outlineStyle={{ borderWidth: 0 }}
-            />
+            <TextInput value={phone} onChangeText={setPhone} style={styles.input} mode="outlined" />
 
-            <View style={styles.row}>
-              <View style={styles.column}>
-                <Text style={styles.label}>Institution</Text>
-                <TextInput
-                  value={institution}
-                  onChangeText={setInstitution}
-                  style={styles.input}
-                  mode="outlined"
-                  theme={{ roundness: 20 }}
-                  outlineStyle={{ borderWidth: 0 }}
-                />
-              </View>
-            </View>
+            <Text style={styles.label}>Institution</Text>
+            <TextInput value={institution} onChangeText={setInstitution} style={styles.input} mode="outlined" />
 
             <Text style={styles.label}>Graduation Date</Text>
             <View style={styles.datePickerContainer}>
-              <View style={styles.pickerWrapper}>
-                <Picker selectedValue={day} onValueChange={(itemValue) => setDay(itemValue)} style={styles.picker}>
-                  <Picker.Item label="Day" value="" />
-                  {days.map((d) => (
-                    <Picker.Item key={d} label={d.toString()} value={d.toString()} />
-                  ))}
-                </Picker>
-              </View>
-              <View style={styles.pickerWrapper}>
-                <Picker selectedValue={month} onValueChange={(itemValue) => setMonth(itemValue)} style={styles.picker}>
-                  <Picker.Item label="Month" value="" />
-                  {months.map((m) => (
-                    <Picker.Item key={m} label={m.toString()} value={m.toString()} />
-                  ))}
-                </Picker>
-              </View>
-              <View style={styles.pickerWrapper}>
-                <Picker selectedValue={year} onValueChange={(itemValue) => setYear(itemValue)} style={styles.picker}>
-                  <Picker.Item label="Year" value="" />
-                  {years.map((y) => (
-                    <Picker.Item key={y} label={y.toString()} value={y.toString()} />
-                  ))}
-                </Picker>
-              </View>
+              <Picker selectedValue={day} onValueChange={(itemValue) => setDay(itemValue)} style={styles.picker}>
+                <Picker.Item label="Day" value="" />
+                {days.map((d) => (
+                  <Picker.Item key={d} label={d.toString()} value={d.toString()} />
+                ))}
+              </Picker>
+              <Picker selectedValue={month} onValueChange={(itemValue) => setMonth(itemValue)} style={styles.picker}>
+                <Picker.Item label="Month" value="" />
+                {months.map((m) => (
+                  <Picker.Item key={m} label={m.toString()} value={m.toString()} />
+                ))}
+              </Picker>
+              <Picker selectedValue={year} onValueChange={(itemValue) => setYear(itemValue)} style={styles.picker}>
+                <Picker.Item label="Year" value="" />
+                {years.map((y) => (
+                  <Picker.Item key={y} label={y.toString()} value={y.toString()} />
+                ))}
+              </Picker>
             </View>
+
             <Text style={styles.label}>Course/Major</Text>
-            <TextInput
-              value={course}
-              onChangeText={setCourse}
-              style={styles.input}
-              mode="outlined"
-              theme={{ roundness: 20 }}
-              outlineStyle={{ borderWidth: 0 }}
-            />
+            <TextInput value={course} onChangeText={setCourse} style={styles.input} mode="outlined" />
 
             <Text style={styles.label}>Password</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
-              style={styles.input}
               secureTextEntry
+              style={styles.input}
               mode="outlined"
-              theme={{ roundness: 20 }}
-              outlineStyle={{ borderWidth: 0 }}
             />
 
             <Text style={styles.label}>Confirm Password</Text>
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              style={styles.input}
               secureTextEntry
+              style={styles.input}
               mode="outlined"
-              theme={{ roundness: 20 }}
-              outlineStyle={{ borderWidth: 0 }}
             />
             <Paragraph style={{ color: "red" }}>{message}</Paragraph>
 
             <Text style={styles.label}>Upload Academic Qualifications and Certificate of Good Conduct</Text>
-            <TouchableOpacity onPress={handleUpload} className="flex-row items-center bg-gray-300 p-3  rounded-3xl">
+            <TouchableOpacity onPress={handleUpload} style={styles.uploadButton}>
               <Icon name="upload" size={24} color="black" />
-              <Text className="ml-2 text-gray-700">{qualifications || "Tap to upload "}</Text>
+              <Text style={styles.uploadText}>{qualifications ? qualifications.name : "Tap to upload"}</Text>
             </TouchableOpacity>
-            <View style={{ alignItems: "center" }} className="my-5">
-              <Button
-                mode="contained"
-                onPress={handleRegister}
-                style={styles.button}
-                className="bg-slate-600 text-slate-900 font-bold my-5"
-              >
-                Become a tutor
+
+            <View style={styles.buttonContainer}>
+              <Button mode="contained" onPress={handleRegister} style={styles.button}>
+                Become a Tutor
               </Button>
             </View>
           </Card.Content>
@@ -214,7 +222,6 @@ const TutorSetUp = ({ navigateToLogin }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 0,
     backgroundColor: "#fff",
   },
   appBarTitle: {
@@ -223,14 +230,6 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 10,
-    paddingTop: 0,
-    paddingBottom: 0,
-    backgroundColor: "#fff",
-  },
-  card: {
-    padding: 10,
-    paddingTop: 0,
-    paddingBottom: 0,
     backgroundColor: "#fff",
   },
   header: {
@@ -243,77 +242,52 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0e0e0",
   },
   title: {
-    fontWeight: "900",
-    flex: 1,
-    fontSize: 30,
-  },
-  photoContainer: {
-    width: 100,
-    height: 100,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 50,
-    borderColor: "#e0e0e0",
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  photo: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  iconContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  uploadText: {
-    textAlign: "center",
-    marginTop: 5,
-  },
-  label: {
-    marginBottom: 5,
     fontWeight: "bold",
-    fontSize: 17,
+    fontSize: 24,
+    marginBottom: 10,
   },
   input: {
     marginBottom: 10,
-    height: 35,
-    backgroundColor: "#CCC",
-    borderRadius: 20,
-    paddingHorizontal: 10,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    marginTop: 20,
   },
   button: {
-    marginBottom: 0,
-    marginTop: 0,
-    maxWidth: 150,
+    backgroundColor: "#6200EE",
+  },
+  photoContainer: {
+    marginLeft: "auto",
     alignItems: "center",
   },
-  link: {
-    marginTop: 10,
-    textAlign: "center",
+  photo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  iconContainer: {
+    alignItems: "center",
+  },
+  uploadText: {
+    fontWeight: "bold",
   },
   datePickerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  pickerWrapper: {
-    flex: 1,
-    marginHorizontal: 5,
-    backgroundColor: "#f0f0f0",
-    height: 40,
-    borderRadius: 25,
-  },
   picker: {
     flex: 1,
   },
-  row: {
+  uploadButton: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  column: {
-    flex: 1,
-    marginHorizontal: 5,
+    alignItems: "center",
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginTop: 10,
   },
 });
 

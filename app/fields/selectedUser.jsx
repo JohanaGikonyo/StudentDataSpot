@@ -1,9 +1,10 @@
 import React from "react";
 import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-
+import { useRouter } from "expo-router";
 const SelectedUser = () => {
-  const { name, image, major, year, institution, graduationYear, phone, email } = useLocalSearchParams();
+  const router = useRouter();
+  const { name, major, year, institution, graduationYear, phone, email, photo } = useLocalSearchParams();
 
   const renderProfileImage = (name, image) => {
     if (image) {
@@ -21,13 +22,20 @@ const SelectedUser = () => {
     }
   };
 
+  const handleMessagePress = () => {
+    router.push({
+      pathname: "/chatspot/Messaging",
+      params: { name: name, status: "online", photo: photo },
+    });
+  };
+
   return (
     <ScrollView>
       <View style={styles.container}>
         {/* Name at the top */}
         <Text style={styles.name}>{name}</Text>
         {/* Profile Image */}
-        {renderProfileImage(name, image)}
+        {renderProfileImage(name, photo)}
         {/* User Details */}
         <View style={styles.detailsContainer}>
           <Text style={styles.detailText}>Name: {name}</Text>
@@ -38,12 +46,21 @@ const SelectedUser = () => {
           <Text style={styles.detailText}>Phone Number: +254{phone}</Text>
           <Text style={styles.detailText}>Email: {email}</Text>
         </View>
-        {/* Connect Button */}
+        {/* Connect and Message Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={styles.connectButton}
+            style={[styles.actionButton, styles.messageButton]}
             onPress={() => {
-              /* Handle booking logic here */
+              handleMessagePress();
+            }}
+          >
+            <Text style={styles.messageButtonText}>Message</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.connectButton]}
+            onPress={() => {
+              /* Handle connect logic here */
             }}
           >
             <Text style={styles.connectButtonText}>Connect</Text>
@@ -97,7 +114,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     width: "100%",
-    alignItems: "center",
+    alignItems: "start",
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -112,19 +129,33 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   buttonContainer: {
+    flexDirection: "row", // Arrange buttons horizontally
+    justifyContent: "space-between",
+    width: "80%", // Ensure the buttons occupy 80% of the width
     marginTop: 30,
-    width: "100%",
+  },
+  actionButton: {
+    flex: 1, // Evenly distribute button width
+    padding: 15,
+    borderRadius: 10,
     alignItems: "center",
+    marginHorizontal: 10, // Spacing between the buttons
+  },
+  messageButton: {
+    backgroundColor: "white", // White button with a border for "Message"
+    borderColor: "#007BFF",
+    borderWidth: 1,
   },
   connectButton: {
-    padding: 15,
-    backgroundColor: "#007BFF", // Blue button color for Connect
-    borderRadius: 10,
-    width: "80%",
-    alignItems: "center",
+    backgroundColor: "#007BFF", // Blue button for "Connect"
+  },
+  messageButtonText: {
+    color: "#007BFF", // Blue text for the "Message" button
+    fontSize: 18,
+    fontWeight: "bold",
   },
   connectButtonText: {
-    color: "white",
+    color: "white", // White text for the "Connect" button
     fontSize: 18,
     fontWeight: "bold",
   },

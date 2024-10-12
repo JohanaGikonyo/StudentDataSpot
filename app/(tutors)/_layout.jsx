@@ -2,19 +2,26 @@ import React from "react";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { AntDesign } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Image } from "react-native";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { Appbar } from "react-native-paper";
 import { useKeyboard } from "../../components/usekeyboard";
-import Stack from "expo-router";
-
+import { useUser } from "../../store/userStore";
 export default function TutorsLayout() {
+  const { user } = useUser();
   const router = useRouter();
   const keyboardShown = useKeyboard();
 
+  // Function to get initials from a user's name
+  const getInitials = (name) => {
+    if (!name) return "U"; // Fallback for missing name
+    const names = name.split(" ");
+    const initials = names.length > 1 ? names[0][0] + names[1][0] : names[0][0];
+    return initials.toUpperCase();
+  };
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-      {/* <Stack.Screen name="userconnect" options={{ headerShown: false }} /> */}
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: "black",
@@ -49,7 +56,13 @@ export default function TutorsLayout() {
               <Appbar.Header style={styles.header}>
                 <Appbar.BackAction size={30} onPress={() => router.push("/(tabs)")} />
                 <Appbar.Content title="Chat Spot" titleStyle={styles.headerContentTitle} />
-                <Appbar.Action icon="menu" onPress={() => alert("Menu")} />
+                <TouchableOpacity style={styles.profileButton} onPress={() => router.push("/profile/user")}>
+                  {user?.profileImage ? (
+                    <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
+                  ) : (
+                    <View style={[styles.profileImage, styles.initialsContainer]}></View>
+                  )}
+                </TouchableOpacity>
               </Appbar.Header>
             ),
           }}
@@ -62,7 +75,15 @@ export default function TutorsLayout() {
               <Appbar.Header style={styles.header}>
                 <Appbar.BackAction onPress={() => router.push("/(tabs)")} />
                 <Appbar.Content title="Video Chat" titleStyle={styles.headerContentTitle} />
-                <Appbar.Action icon="account-circle" onPress={() => router.push("/profile/user")} />
+                <TouchableOpacity style={styles.profileButton} onPress={() => router.push("/profile/user")}>
+                  {user?.profileImage ? (
+                    <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
+                  ) : (
+                    <View style={[styles.profileImage, styles.initialsContainer]}>
+                      <Text style={styles.initials}>{getInitials(user?.name || user.email)}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
               </Appbar.Header>
             ),
           }}
@@ -75,7 +96,13 @@ export default function TutorsLayout() {
               <Appbar.Header style={styles.header}>
                 <Appbar.Action icon="magnify" size={30} onPress={() => console.log("Search icon pressed")} />
                 <Appbar.Content title="TutorHub" titleStyle={styles.headerContentTitle} />
-                <Appbar.Action icon="account-circle" onPress={() => router.push("/profile/user")} />
+                <TouchableOpacity style={styles.profileButton} onPress={() => router.push("/profile/user")}>
+                  {user?.profileImage ? (
+                    <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
+                  ) : (
+                    <View style={[styles.profileImage, styles.initialsContainer]}></View>
+                  )}
+                </TouchableOpacity>
               </Appbar.Header>
             ),
           }}
@@ -92,29 +119,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingLeft: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginLeft: 8,
-    color: "black",
-  },
-  headerRight: {
-    paddingRight: 16,
-    flexDirection: "row",
-    alignItems: "center",
-  },
   profileButton: {
     alignItems: "center",
+    flexDirection: "row", // Ensure the text aligns properly with the image
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ccc", // Placeholder background color
   },
   profileText: {
     fontSize: 10,
     fontWeight: "bold",
     color: "black",
+    marginLeft: 8, // Added margin to separate text from the image
     marginTop: 4,
   },
   headerContentTitle: {

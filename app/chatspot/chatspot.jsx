@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from "react-native";
-
+import { usePathname, useRouter } from "expo-router";
 const ChatList = ({ navigation }) => {
-  //below are the examples from the figma design
   const chats = [
     {
       id: 1,
@@ -38,10 +37,15 @@ const ChatList = ({ navigation }) => {
 };
 
 const ChatItem = ({ chat, navigation }) => {
+  const router = useRouter();
   const { name, lastMessage, image } = chat;
 
   const onPressChat = () => {
     // Navigate to chat screen
+    router.push({
+      pathname: "/chatspot/Messaging",
+      params: { name: name, image: image, status: "online" },
+    });
     console.log(`Navigating to chat with ${name}`);
   };
 

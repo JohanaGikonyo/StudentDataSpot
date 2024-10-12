@@ -7,6 +7,9 @@ import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 import { useUser } from "@/store/userStore";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// import ImagePicker from "react-native-image-crop-picker";
 
 const RegisterForm = ({ navigateToLogin }) => {
   const router = useRouter();
@@ -26,14 +29,41 @@ const RegisterForm = ({ navigateToLogin }) => {
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
+  const handleChoosePhoto = async () => {
+    try {
+      const response = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+        base64: true, // Ensure base64 is included in the response
+      });
+
+      if (!response.canceled) {
+        // Access the first item in the assets array to get the URI
+        const asset = response.assets ? response.assets[0] : null;
+
+        if (asset) {
+          const base64Image = `data:${asset.mimeType};base64,${asset.base64}`; // Create a base64 string
+          setPhoto(base64Image); // Store base64 image string
+        } else {
+          console.log("No assets found in the response");
+        }
+      }
+    } catch (error) {
+      console.log("Error picking image:", error);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    console.log("registering with ", email, name, password);
     if (password !== confirmPassword) {
       setMessage("Passwords do not match!");
       return;
     }
 
-    if (!name || !email || !password) {
-      setMessage("Name, email, password");
+    if (!name || !email || !password || !photo) {
+      setMessage("Name, email, password, and profile image are required.");
       return;
     }
 
@@ -46,46 +76,35 @@ const RegisterForm = ({ navigateToLogin }) => {
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("email", email);
-      formData.append("phone", phone);
-      formData.append("day", day);
-      formData.append("month", month);
-      formData.append("year", year);
-      formData.append("institution", institution);
-      formData.append("graduationYear", graduationYear);
-      formData.append("course", course);
-      formData.append("password", password);
-
-      if (photo) {
-        const fileName = photo.uri.split("/").pop();
-        const fileType = photo.uri.match(/\.\w+$/) ? photo.uri.match(/\.\w+$/)[0] : "";
-        formData.append("photo", {
-          uri: photo.uri,
-          name: fileName,
-          type: `image/${fileType.replace(".", "")}`,
-        });
-      }
-
-      // Console log the form data for debugging
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
-      const response = await axios.post("http://localhost:3000/api/users/register", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      const response = await axios.post(
+        "http://192.168.137.91:3000/api/users/register",
+        {
+          photo,
+          name,
+          email,
+          phone,
+          day,
+          month,
+          year,
+          institution,
+          graduationYear,
+          course,
+          password,
         },
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.status === 201) {
         setMessage("User registered successfully!");
         const token = response.data.token; // Assuming the response contains a token
         const user = response.data.user; // Assuming the response contains user data
 
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+        await AsyncStorage.setItem("token", token);
+        await AsyncStorage.setItem("user", JSON.stringify(user));
         setUser(JSON.stringify(user)); // Assuming setUser takes an object
         router.push("/");
       } else {
@@ -96,24 +115,6 @@ const RegisterForm = ({ navigateToLogin }) => {
       setMessage("Error registering user: " + (error.response ? error.response.data.message : error.message));
     } finally {
       setLoading(false);
-    }
-  };
-
-  // replaced this fuction below
-  const selectPhoto = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 1,
-      });
-      if (!result.canceled) {
-        setPhoto(result.assets[0]);
-      } else {
-        console.log("User cancelled image picker");
-      }
-    } catch (error) {
-      console.log("ImagePicker Error: ", error);
     }
   };
 
@@ -134,9 +135,9 @@ const RegisterForm = ({ navigateToLogin }) => {
           <Card.Content>
             <View style={styles.header}>
               <Title style={styles.title}>Account Set-Up</Title>
-              <TouchableOpacity onPress={selectPhoto} style={styles.photoContainer}>
+              <TouchableOpacity onPress={handleChoosePhoto} style={styles.photoContainer}>
                 {photo ? (
-                  <Image source={{ uri: photo.uri }} style={styles.photo} />
+                  <Image source={{ uri: photo }} style={styles.image} />
                 ) : (
                   <View style={styles.iconContainer}>
                     <Icon name="photo-camera" size={30} color="#000" />
@@ -194,78 +195,6 @@ const RegisterForm = ({ navigateToLogin }) => {
                 />
               </View>
             </View>
-            {/* <View style={styles.datePickerContainer}>
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={day}
-                    onValueChange={(itemValue) => setDay(itemValue)}
-                    style={styles.picker}
-                    prompt="Select Day"
-                  >
-                    <Picker.Item label="Day" value="" />
-                    {days.map((d) => (
-                      <Picker.Item key={d} label={d.toString()} value={d.toString()} />
-                    ))}
-                  </Picker>
-                </View>
-
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={month}
-                    onValueChange={(itemValue) => setMonth(itemValue)}
-                    style={styles.picker}
-                    prompt="Select Month"
-                  >
-                    <Picker.Item label="Month" value="" />
-                    {months.map((m) => (
-                      <Picker.Item key={m} label={m.toString()} value={m.toString()} />
-                    ))}
-                  </Picker>
-                </View>
-
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={year}
-                    onValueChange={(itemValue) => setYear(itemValue)}
-                    style={styles.picker}
-                    prompt="Select Year"
-                  >
-                    <Picker.Item label="Year" value="" />
-                    {years.map((y) => (
-                      <Picker.Item key={y} label={y.toString()} value={y.toString()} />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-            </View> */}
-
-            {/* <Text style={styles.label}>Graduation Date</Text>
-            <View style={styles.datePickerContainer}>
-              <View style={styles.pickerWrapper}>
-                <Picker selectedValue={day} onValueChange={setDay} style={styles.picker}>
-                  <Picker.Item label="Day" value="" />
-                  {days.map((d) => (
-                    <Picker.Item key={d} label={d.toString()} value={d.toString()} />
-                  ))}
-                </Picker>
-              </View>
-              <View style={styles.pickerWrapper}>
-                <Picker selectedValue={month} onValueChange={setMonth} style={styles.picker}>
-                  <Picker.Item label="Month" value="" />
-                  {months.map((m) => (
-                    <Picker.Item key={m} label={m.toString()} value={m.toString()} />
-                  ))}
-                </Picker>
-              </View>
-              <View style={styles.pickerWrapper}>
-                <Picker selectedValue={year} onValueChange={setYear} style={styles.picker}>
-                  <Picker.Item label="Year" value="" />
-                  {years.map((y) => (
-                    <Picker.Item key={y} label={y.toString()} value={y.toString()} />
-                  ))}
-                </Picker>
-              </View>
-            </View> */}
 
             <View style={styles.column}>
               <Text style={styles.label}>Graduation Year</Text>
@@ -385,15 +314,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   photoContainer: {
-    alignItems: "center",
+    width: 140,
+    height: 140,
+    borderRadius: 70, // Circular container
     justifyContent: "center",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    overflow: "hidden",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
   },
+  image: {
+    width: 140,
+    height: 140,
+    borderRadius: 70, // Circular image
+  },
+
   photo: {
     width: "100%",
     height: "100%",
@@ -422,14 +355,29 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
   },
+  datePickerContainer: {
+    flexDirection: "row",
+    marginTop: 10,
+    justifyContent: "space-between",
+  },
   pickerWrapper: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    overflow: "hidden",
+    flex: 1,
+    marginHorizontal: 5,
+    backgroundColor: "#f0f0f0",
+    height: 40,
+    borderRadius: 25,
   },
   picker: {
-    height: 50,
+    flex: 1,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  column: {
+    flex: 1,
+    marginHorizontal: 5,
   },
   datePickerContainer: {
     flexDirection: "row",
@@ -463,6 +411,11 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#ccc",
     marginVertical: 8,
+  },
+  image: {
+    width: 100,
+    height: 100,
+    marginTop: 10,
   },
 });
 

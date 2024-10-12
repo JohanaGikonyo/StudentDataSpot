@@ -17,7 +17,7 @@ const DefaultTab = () => {
   });
   const handleSubscribe = async (videoId) => {
     try {
-      const response = await axios.post(`http://localhost:3000/api/interactions/subscribe/${videoId}`);
+      const response = await axios.post(`http://192.168.137.91:3000/api/interactions/subscribe/${videoId}`);
       console.log("Subscribed successfully:", response.data);
       fetchVideos(); // Fetch updated data
     } catch (error) {
@@ -26,7 +26,7 @@ const DefaultTab = () => {
   };
   const handleLike = async (videoId) => {
     try {
-      const response = await axios.post(`http://localhost:3000/api/interactions/like/${videoId}`);
+      const response = await axios.post(`http://192.168.137.91:3000/api/interactions/like/${videoId}`);
       console.log("Liked successfully:", response.data);
       fetchVideos(); // Fetch updated data
     } catch (error) {
@@ -36,7 +36,7 @@ const DefaultTab = () => {
 
   const handleDislike = async (videoId) => {
     try {
-      const response = await axios.post(`http://localhost:3000/api/interactions/dislike/${videoId}`);
+      const response = await axios.post(`http://192.168.137.91:3000/api/interactions/dislike/${videoId}`);
       console.log("Disliked successfully:", response.data);
       fetchVideos(); // Fetch updated data
     } catch (error) {
@@ -48,7 +48,7 @@ const DefaultTab = () => {
     setRefreshing(true);
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:3000/api/videos");
+      const response = await axios.get("http://192.168.137.91:3000/api/videos");
       console.log("Fetched Videos:", response.data); // Debugging
       setVideos(response.data);
     } catch (error) {
@@ -95,7 +95,7 @@ const DefaultTab = () => {
   const renderItem = ({ item }) => (
     <View style={styles.videoContainer}>
       <Video
-        source={{ uri: `http://localhost:3000/${item.videoUrl}` }}
+        source={{ uri: `http://192.168.137.91:3000/${item.videoUrl}` }}
         style={styles.video}
         useNativeControls
         resizeMode="cover"

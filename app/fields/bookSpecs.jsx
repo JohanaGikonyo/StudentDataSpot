@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { tw } from "nativewind"; // Ensure nativewind is imported
 import { Appbar, Button } from "react-native-paper";
@@ -31,40 +31,42 @@ const BookSpecs = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text className="m-4 text-3xl font-bold">
-        {name} <Text>Eric John Book Specs</Text>
-      </Text>
-      <Image source={{ uri: image }} style={styles.image} />
+    <ScrollView>
+      <View style={styles.container}>
+        <Text className="m-4 text-3xl font-bold">
+          {name} <Text>Eric John Book Specs</Text>
+        </Text>
+        <Image source={{ uri: image }} style={styles.image} />
 
-      <View className="flex flex-col gap-2 my-3">
-        <Text className="text-slate-800 m-2 font-bold text-xl">Current Location</Text>
-        <Button className="bg-slate-300 font-bold text-black">
-          <Text className="text-slate-700 font-bold">Rongai</Text>
-        </Button>
-      </View>
+        <View className="flex flex-col gap-2 my-3">
+          <Text className="text-slate-800 m-2 font-bold text-xl">Current Location</Text>
+          <Button className="bg-slate-300 font-bold text-black">
+            <Text className="text-slate-700 font-bold">Rongai</Text>
+          </Button>
+        </View>
 
-      <View className="flex flex-col gap-2 my-3">
-        <Text className="text-slate-800 m-2 font-bold text-xl">Preferred Tutor Locaton</Text>
-        <Button className="bg-slate-300 font-bold text-black">
-          <Text className="text-slate-700 font-bold">Maasai Lodge</Text>
-        </Button>
-      </View>
+        <View className="flex flex-col gap-2 my-3">
+          <Text className="text-slate-800 m-2 font-bold text-xl">Preferred Tutor Locaton</Text>
+          <Button className="bg-slate-300 font-bold text-black">
+            <Text className="text-slate-700 font-bold">Maasai Lodge</Text>
+          </Button>
+        </View>
 
-      <View className="flex flex-col gap-2 my-3">
-        <Text className="text-slate-800 m-2 font-bold text-xl">Time When Available</Text>
-        <Button className="bg-slate-300 font-bold text-black">
-          <Text className="text-slate-700 font-bold">3:00 P.M</Text>
-        </Button>
-      </View>
+        <View className="flex flex-col gap-2 my-3">
+          <Text className="text-slate-800 m-2 font-bold text-xl">Time When Available</Text>
+          <Button className="bg-slate-300 font-bold text-black">
+            <Text className="text-slate-700 font-bold">3:00 P.M</Text>
+          </Button>
+        </View>
 
-      <View className="flex flex-col gap-2 my-3">
-        <Text className="text-slate-800 m-2 font-bold text-xl">Preferred Tutor Fee</Text>
-        <Button className="bg-slate-300 font-bold text-black">
-          <Text className="text-slate-700 font-bold">200</Text>
-        </Button>
+        <View className="flex flex-col gap-2 my-3">
+          <Text className="text-slate-800 m-2 font-bold text-xl">Preferred Tutor Fee</Text>
+          <Button className="bg-slate-300 font-bold text-black">
+            <Text className="text-slate-700 font-bold">200</Text>
+          </Button>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
