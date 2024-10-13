@@ -12,7 +12,7 @@ const Tutorbook = () => {
   const { topic } = useLocalSearchParams();
   const [selectedMajor, setSelectedMajor] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
-  const [search, setSearch] = useState(topic);
+  const [search, setSearch] = useState("");
   const [profiles, setProfiles] = useState([]);
   const [rated, setRated] = useState([]);
 
@@ -224,11 +224,11 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingTop: 0, 
+    paddingTop: 0,
   },
   scrollView: {
     flex: 1,
-    paddingTop: 60, 
+    paddingTop: 60,
   },
   contentContainer: {
     padding: 15,
