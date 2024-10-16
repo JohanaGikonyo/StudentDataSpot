@@ -57,7 +57,7 @@
     "react-native-vector-icons": "^10.1.0",
     "react-native-web": "~0.19.10",
     "redaxios": "^0.5.1",
-    "socket.io-client": "^4.7.5",
+    "socket.io-client": "^4.8.0",
     "ws": "^8.18.0",
     "zustand": "^5.0.0-rc.2"
   },

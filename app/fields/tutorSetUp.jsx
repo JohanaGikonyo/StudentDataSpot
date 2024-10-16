@@ -17,13 +17,10 @@ export default function TutorSetUp() {
         const storedToken = await AsyncStorage.getItem("Tutortoken");
         const storedUser = await AsyncStorage.getItem("tutorDetails");
 
-        if (storedToken || storedUser) {
+        if (storedToken && storedUser) {
           setTutorDetails(JSON.parse(storedUser));
           setPage("profile");
           console.log("tutor found");
-        } else {
-          console.log("tutor not found");
-          setPage("login");
         }
       } catch (error) {
         console.error("Error fetching stored data:", error);

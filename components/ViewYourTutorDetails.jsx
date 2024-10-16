@@ -27,7 +27,8 @@ export default function ViewYourTutorDetails({ details, setPage }) {
       // Remove the token and details from AsyncStorage
       await AsyncStorage.removeItem("Tuortoken");
       await AsyncStorage.removeItem("tutorDetails");
-      router.push("/fields/tutorSetUp");
+      setPage("login");
+
       Alert.alert("Logged out", "You have been successfully logged out.");
     } catch (error) {
       console.error("Error logging out:", error);
@@ -66,9 +67,9 @@ export default function ViewYourTutorDetails({ details, setPage }) {
       </TouchableOpacity>
 
       {/* Logout Button */}
-      {/* <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
     </ScrollView>
   );
 }

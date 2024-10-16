@@ -77,7 +77,7 @@ const RegisterForm = ({ navigateToLogin }) => {
 
     try {
       const response = await axios.post(
-        "http://192.168.137.91:3000/api/users/register",
+        "http://localhost:3000/api/users/register",
         {
           photo,
           name,

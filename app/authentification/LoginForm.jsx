@@ -19,7 +19,7 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSucces
 
     try {
       // Make sure to use the correct IP address of your server if testing on device
-      const response = await fetch("http://192.168.137.201:3000/api/users/login", {
+      const response = await fetch("http://localhost:3000/api/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,15 +35,19 @@ const LoginForm = ({ navigateToForgotPassword, navigateToRegister, onLoginSucces
 
       const data = await response.json(); // Properly parse JSON response
       const { token, user } = data; // Extract token and user from response
-
+      console.log(user);
       // Handle token and user data (store them for later use)
       await AsyncStorage.setItem("token", token); // Use AsyncStorage for storing token
-      await AsyncStorage.setItem("user", JSON.stringify(user));
+      await AsyncStorage.setItem("user", JSON.stringify(user))
+        .then(() => {
+          console.log("User stored successfully");
+        })
+        .catch((error) => {
+          console.error("Error storing user in AsyncStorage", error);
+        });
 
-      await setUser(JSON.stringify(user)); // Update user store with user data
+      await setUser(user); // Update user store with user data
       setMessage("Login successful!");
-
-      onLoginSuccess(); // Trigger any additional login success actions
 
       // Clear fields after successful login
       setEmail("");

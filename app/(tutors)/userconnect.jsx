@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, Image, ScrollView, StyleSheet } from "react-native";
+import { Text, View, TouchableOpacity, Image, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Appbar, Title } from "react-native-paper";
 import { FontAwesome } from "@expo/vector-icons";
 import { SearchBar } from "react-native-elements";
 import { useUser } from "../../store/userStore";
+import axios from "axios";
 
 const Users = () => {
   const { user } = useUser();
@@ -12,29 +13,31 @@ const Users = () => {
   const [search, setSearch] = useState("");
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   const Skeleton = () => (
-    <View style={styles.skeletonCard}>
-      <View style={styles.skeletonAvatar} />
-      <Text>Please Wait...</Text>
-    </View>
+    <View style={styles.skeletonCard}>{loading && <ActivityIndicator size="large" color="#6200EE" />}</View>
   );
 
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/users/getUsers");
-        const data = await response.json();
-        setProfiles(data.users);
+        const response = await axios.get("http://localhost:3000/api/users/getUsers", {
+          params: { page, limit: 50 },
+        });
+        setProfiles((prevProfiles) => [...prevProfiles, ...response.data.users]); // Append new profiles
+        setHasMore(response.data.hasMore); // Check if more tutors exist
       } catch (error) {
         console.error("Error fetching profiles:", error);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchProfiles();
-  }, []);
+    if (hasMore) {
+      fetchProfiles(); // Load more users when needed
+    }
+  }, [page]);
 
   const handleSearchChange = (text) => {
     setSearch(text);
@@ -60,6 +63,7 @@ const Users = () => {
     router.push({
       pathname: "/fields/selectedUser",
       params: {
+        id: user._id,
         name: user.name,
         image: user.profileImage,
         major: user.course,
@@ -86,7 +90,11 @@ const Users = () => {
       );
     }
   };
-
+  const loadMoreProfiles = () => {
+    if (hasMore && !loading) {
+      setPage((prevPage) => prevPage + 1); // Load next page of data
+    }
+  };
   return (
     <View style={styles.container}>
       <Appbar.Header style={styles.header}>
@@ -107,7 +115,18 @@ const Users = () => {
         </TouchableOpacity>
       </Appbar.Header>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        onScroll={({ nativeEvent }) => {
+          if (
+            nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >=
+            nativeEvent.contentSize.height - 20
+          ) {
+            loadMoreProfiles(); // Trigger loading more tutors when reaching the bottom
+          }
+        }}
+        scrollEventThrottle={400}
+      >
         <View style={styles.innerContainer}>
           <Text style={styles.introText}>Connect with a community of Students seeking knowledge</Text>
           <SearchBar
@@ -267,13 +286,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
     width: "48%",
-  },
-  skeletonAvatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "#C0C0C0",
-    marginBottom: 8,
+    alignItems: "center",
   },
 });
 

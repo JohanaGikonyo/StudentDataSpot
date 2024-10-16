@@ -70,6 +70,28 @@ export default function Layout() {
           ),
         }}
       />
+      <Stack.Screen
+        name="connect/ConnectionRequests"
+        options={{
+          header: ({ navigation }) => (
+            <Appbar.Header style={styles.header}>
+              <Appbar.BackAction onPress={() => navigation.goBack()} />
+              <Appbar.Content title="Pending Requests" titleStyle={styles.title} />
+            </Appbar.Header>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="connect/Connected"
+        options={{
+          header: ({ navigation }) => (
+            <Appbar.Header style={styles.header}>
+              <Appbar.BackAction onPress={() => navigation.goBack()} />
+              <Appbar.Content title="Your Followers" titleStyle={styles.title} />
+            </Appbar.Header>
+          ),
+        }}
+      />
     </Stack>
   );
 }

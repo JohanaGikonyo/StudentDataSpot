@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import SplashScreen from "./SplashScreen";
 import RegisterForm from "./authentification/RegisterForm";
 import LoginForm from "./authentification/LoginForm";
-import { useUser } from "@/store/userStore";
+import { useUser, useFollowers, usePending } from "@/store/userStore";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 
 export default function Home() {
@@ -12,24 +12,10 @@ export default function Home() {
   const [showLogin, setShowLogin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true); // New loading state
-  const { setUser } = useUser();
+  const { setUser, user } = useUser();
+  const { setFollowers } = useFollowers();
+  const { setPending } = usePending();
   const router = useRouter(); // Initialize useRouter for navigation
-
-  const handleLogout = async () => {
-    try {
-      // Clear token and user data from AsyncStorage
-      await AsyncStorage.removeItem("token");
-      await AsyncStorage.removeItem("user");
-
-      // Clear user data from the app's state/store
-      setUser(null); // Clear user data from state
-
-      // Navigate to the login screen
-      router.push("/"); // Replace with your actual login page path
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
 
   const handleSplashScreenFinish = () => {
     setAppReady(true);
@@ -49,7 +35,7 @@ export default function Home() {
       await AsyncStorage.setItem("token", token);
       await AsyncStorage.setItem("user", JSON.stringify(userData));
 
-      setUser(userData); // Set user data in the app's state/store
+      setUser(JSON.parse(userData)); // Set user data in the app's state/store
       setIsAuthenticated(true); // Set the authenticated state
 
       // Redirect to the main tabs screen
@@ -65,8 +51,8 @@ export default function Home() {
       try {
         const token = await AsyncStorage.getItem("token"); // Get token from AsyncStorage
         if (token) {
-          const userData = JSON.parse(await AsyncStorage.getItem("user")); // Assuming user data is also stored in AsyncStorage
-          setUser(userData); // Set user data
+          const userData = await AsyncStorage.getItem("user"); // Assuming user data is also stored in AsyncStorage
+          await setUser(JSON.parse(userData)); // Set user data
           setIsAuthenticated(true); // Set authenticated state
           router.push("/(tabs)"); // Redirect to the main page
         }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Appbar, Title } from "react-native-paper";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -14,35 +14,51 @@ const Tutorbook = () => {
   const [selectedYear, setSelectedYear] = useState("");
   const [search, setSearch] = useState("");
   const [profiles, setProfiles] = useState([]);
-  const [rated, setRated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchTutors = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/tutors/gettutors");
-        setProfiles(response.data);
-        setRated(response.data.rated || []);
+        const response = await axios.get("http://localhost:3000/api/tutors/gettutors", {
+          params: { page, limit: 50 },
+        });
+        setProfiles((prevProfiles) => [...prevProfiles, ...response.data.tutors]); // Append new profiles
+        setHasMore(response.data.hasMore); // Check if more tutors exist
+        setLoading(false); // Stop loading once data is fetched
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching tutors:", error);
+        setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    if (hasMore) {
+      fetchTutors(); // Load more tutors when needed
+    }
+  }, [page]); // Fetch more tutors when page changes
 
   const handleSearchChange = (text) => {
     setSearch(text);
   };
-
+  const shuffleProfiles = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
   const filteredProfiles = profiles.filter(
     (profile) =>
       profile.name.toLowerCase().includes(search.toLowerCase()) ||
-      profile.course.toLowerCase().includes(search.toLowerCase()) // Check both name and course
+      profile.course.toLowerCase().includes(search.toLowerCase())
   );
+  const shuffledProfiles = shuffleProfiles(filteredProfiles);
 
   const handleSelectTutor = (tutor) => {
     router.push({
       pathname: "/fields/selectedTutor",
       params: {
+        id: tutor.id,
         name: tutor.name,
         image: tutor.photo,
         email: tutor.email,
@@ -80,34 +96,44 @@ const Tutorbook = () => {
     }
   };
 
+  const loadMoreProfiles = () => {
+    if (hasMore && !loading) {
+      setPage((prevPage) => prevPage + 1); // Load next page of data
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Appbar.Header style={styles.appBar}>
         <View style={styles.iconWrapper} onPress={() => router.push("/userconnect")}>
           <Appbar.Action icon="account-group" size={30} color="#6200EE" onPress={() => router.push("/userconnect")} />
           <TouchableOpacity>
-            <Text style={styles.iconText} className="font-bold">
-              User Connect
-            </Text>
+            <Text style={styles.iconText}>User Connect</Text>
           </TouchableOpacity>
         </View>
         <Appbar.Content title="" />
-        <Text style={styles.appBarTitle} className="font-extrabold text-3xl">
-          Tutorhub
-        </Text>
+        <Text style={styles.appBarTitle}>Tutorhub</Text>
         <Appbar.Content title="" />
         <View style={styles.iconWrapper}>
           <Appbar.Action icon="school" color="#6200EE" onPress={() => router.push("/fields/tutorSetUp")} />
-          <Text style={styles.iconText} className="font-bold">
-            Tutor Setup
-          </Text>
+          <Text style={styles.iconText}>Tutor Setup</Text>
         </View>
       </Appbar.Header>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        shuffledProfilesonScroll={({ nativeEvent }) => {
+          if (
+            nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >=
+            nativeEvent.contentSize.height - 20
+          ) {
+            loadMoreProfiles(); // Trigger loading more tutors when reaching the bottom
+          }
+        }}
+        scrollEventThrottle={400}
+      >
         <View style={styles.contentContainer}>
-          <Text style={styles.text}>Welcome to the awesome and</Text>
-          <Text style={styles.text}>intertwining world of {topic}</Text>
+          <Text style={styles.text}>Welcome to the awesome world of {topic}</Text>
           <View style={styles.search}>
             <SearchBar
               placeholder="Search a tutor..."
@@ -117,60 +143,12 @@ const Tutorbook = () => {
               inputStyle={styles.searchInput}
               value={search}
               onChangeText={handleSearchChange}
-              showLoading={false}
             />
           </View>
-          <Title style={styles.title}>Most Rated:</Title>
-          <View style={styles.iconContainer2}>
-            <TouchableOpacity style={styles.iconButton}>
-              <MaterialIcons name="format-list-bulleted" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <MaterialIcons name="apps" size={24} color="black" />
-            </TouchableOpacity>
-          </View>
-
-          <Title style={styles.title}>Featured:</Title>
-          <View style={styles.iconContainer}>
-            <TouchableOpacity style={styles.iconButton}>
-              <MaterialIcons name="format-list-bulleted" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <MaterialIcons name="apps" size={24} color="black" />
-            </TouchableOpacity>
-            <View>
-              <RNPickerSelect
-                onValueChange={(value) => setSelectedMajor(value)}
-                items={[
-                  { label: "Solid Mechanics", value: "solid-mechanics" },
-                  { label: "Fluid Dynamics", value: "fluid-dynamics" },
-                  { label: "Thermodynamics", value: "thermodynamics" },
-                ]}
-                style={pickerSelectStyles}
-                placeholder={{ label: "Select Major", value: "" }}
-                useNativeAndroidPickerStyle={false}
-                Icon={() => <MaterialIcons name="arrow-drop-down" size={24} color="black" />}
-              />
-            </View>
-            <View>
-              <RNPickerSelect
-                onValueChange={(value) => setSelectedYear(value)}
-                items={[
-                  { label: "1st Year", value: "1st-year" },
-                  { label: "2nd Year", value: "2nd-year" },
-                  { label: "3rd Year", value: "3rd-year" },
-                ]}
-                style={pickerSelectStyles}
-                placeholder={{ label: "Select Year", value: "" }}
-                useNativeAndroidPickerStyle={false}
-                Icon={() => <MaterialIcons name="arrow-drop-down" size={24} color="black" />}
-              />
-            </View>
-          </View>
-
+          <Title style={styles.title}>Featured Tutors</Title>
           <View style={styles.profileContainer}>
-            {filteredProfiles.map((profile, index) => (
-              <TouchableOpacity style={styles.profile} key={index} onPress={() => handleSelectTutor(profile)}>
+            {shuffledProfiles.map((profile, index) => (
+              <TouchableOpacity key={index} style={styles.profile} onPress={() => handleSelectTutor(profile)}>
                 {renderProfileImageOrInitials(profile)}
                 <Text style={styles.profileName}>{profile.name}</Text>
                 <Text style={styles.profileDetails}>{profile.course}</Text>
@@ -178,6 +156,7 @@ const Tutorbook = () => {
               </TouchableOpacity>
             ))}
           </View>
+          {loading && <ActivityIndicator size="large" color="#6200EE" />}
         </View>
       </ScrollView>
     </View>
@@ -278,6 +257,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
     width: "48%", // Adjust as needed
+    alignItems: "center",
   },
   profileImage: {
     width: 50,

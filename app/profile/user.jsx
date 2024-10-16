@@ -10,14 +10,16 @@ import {
   ScrollView,
 } from "react-native";
 import React, { useState } from "react";
-import { useUser } from "@/store/userStore";
+import { useUser, useFollowers, usePending } from "@/store/userStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker"; // For picking profile images
 import axios from "redaxios"; // Axios alternative for HTTP requests
 
 const Profile = () => {
-  const { user, setUser } = useUser();
+  const { user } = useUser();
+  const { followers } = useFollowers();
+  const { pending } = usePending();
   const [isEditing, setIsEditing] = useState(false);
   const [updatedName, setUpdatedName] = useState(user.name);
   const [updatedEmail, setUpdatedEmail] = useState(user.email);
@@ -194,6 +196,22 @@ const Profile = () => {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          router.push("/connect/Connected");
+        }}
+        style={styles.followers}
+      >
+        Followers
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          router.push("/connect/ConnectionRequests");
+        }}
+        style={styles.followers}
+      >
+        Pending Requests
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -289,6 +307,7 @@ const styles = StyleSheet.create({
   loading: {
     marginVertical: 20,
   },
+  followers: { color: "#3607e2" },
 });
 
 export default Profile;

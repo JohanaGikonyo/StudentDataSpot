@@ -3,8 +3,9 @@ import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from "rea
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Appbar } from "react-native-paper";
 import { FontAwesome } from "@expo/vector-icons";
-
+import { useUser } from "../../store/userStore";
 const SelectedTutor = () => {
+  const { user } = useUser();
   const router = useRouter();
   const { name, image, major, year, email, phone, institution } = useLocalSearchParams();
   const [selectedValue, setSelectedValue] = useState(null);
@@ -13,6 +14,38 @@ const SelectedTutor = () => {
     { label: "Online", value: "online" },
     { label: "Physical", value: "physical" },
   ];
+  const handleBooking = async () => {
+    if (!selectedValue) {
+      alert("Please select a session type");
+      return;
+    }
+
+    try {
+      // Make a POST request to send the email
+      const response = await fetch("http://localhost:3000/api/tutors/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tutorEmail: email,
+          userEmail: user.email,
+          selectedValue: selectedValue,
+          userName: user.name,
+          tutorname: name,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Booking request sent!");
+      } else {
+        alert("Failed to send booking request");
+      }
+    } catch (error) {
+      console.error("Error booking session: ", error);
+      alert("Error booking session");
+    }
+  };
 
   const RadioButton = ({ label, value, selected, onSelect }) => {
     return (
@@ -80,12 +113,7 @@ const SelectedTutor = () => {
                 onSelect={setSelectedValue}
               />
             ))}
-            <TouchableOpacity
-              style={styles.bookButton}
-              onPress={() => {
-                /* Handle booking logic here */
-              }}
-            >
+            <TouchableOpacity style={styles.bookButton} onPress={handleBooking}>
               <Text style={styles.bookButtonText}>Book {selectedValue ? selectedValue : ""}</Text>
             </TouchableOpacity>
           </View>

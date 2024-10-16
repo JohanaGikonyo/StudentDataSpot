@@ -1,10 +1,28 @@
-import React from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useRouter } from "expo-router";
+import { useUser } from "../../store/userStore";
+import axios from "axios";
+
 const SelectedUser = () => {
   const router = useRouter();
-  const { name, major, year, institution, graduationYear, phone, email, photo } = useLocalSearchParams();
+  const { name, major, year, institution, graduationYear, phone, email, photo, id } = useLocalSearchParams();
+  const { user } = useUser();
+  const [connectionStatus, setConnectionStatus] = useState(null); // Add state for connection status
+
+  useEffect(() => {
+    const checkConnectionStatus = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3000/api/connection/check-connection/${user.id}/${id}`);
+        setConnectionStatus(response.data.status);
+      } catch (error) {
+        console.error("Error fetching connection status:", error.message);
+      }
+    };
+
+    checkConnectionStatus();
+  }, [user.id, id]);
 
   const renderProfileImage = (name, image) => {
     if (image) {
@@ -22,6 +40,25 @@ const SelectedUser = () => {
     }
   };
 
+  const handleConnectionRequest = async (requesterId, targetId) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/api/connection/connect",
+        { requesterId, targetId },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data = await response.data;
+      Alert.alert("Success!", "Connection request sent");
+      setConnectionStatus("pending"); // Update status after sending the request
+    } catch (error) {
+      Alert.alert("Failed!", error.message);
+      console.error("Error sending connection request:", error.message);
+    }
+  };
+
   const handleMessagePress = () => {
     router.push({
       pathname: "/chatspot/Messaging",
@@ -32,11 +69,8 @@ const SelectedUser = () => {
   return (
     <ScrollView>
       <View style={styles.container}>
-        {/* Name at the top */}
         <Text style={styles.name}>{name}</Text>
-        {/* Profile Image */}
         {renderProfileImage(name, photo)}
-        {/* User Details */}
         <View style={styles.detailsContainer}>
           <Text style={styles.detailText}>Name: {name}</Text>
           <Text style={styles.detailText}>Major: {major}</Text>
@@ -46,25 +80,31 @@ const SelectedUser = () => {
           <Text style={styles.detailText}>Phone Number: +254{phone}</Text>
           <Text style={styles.detailText}>Email: {email}</Text>
         </View>
-        {/* Connect and Message Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.messageButton]}
-            onPress={() => {
-              handleMessagePress();
-            }}
-          >
+          <TouchableOpacity style={[styles.actionButton, styles.messageButton]} onPress={handleMessagePress}>
             <Text style={styles.messageButtonText}>Message</Text>
           </TouchableOpacity>
+          {/* Conditionally render the "Connect" button */}
+          {connectionStatus !== "pending" && connectionStatus !== "accepted" && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.connectButton]}
+              onPress={() => handleConnectionRequest(user.id, id)}
+            >
+              <Text style={styles.connectButtonText}>Connect</Text>
+            </TouchableOpacity>
+          )}
+          {/* Display status if a request is pending or connection is accepted */}
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.connectButton]}
-            onPress={() => {
-              /* Handle connect logic here */
-            }}
-          >
-            <Text style={styles.connectButtonText}>Connect</Text>
-          </TouchableOpacity>
+          {connectionStatus === "pending" && (
+            <TouchableOpacity style={[styles.actionButton, styles.messageButton]}>
+              <Text style={styles.connectStatus}>Pending </Text>
+            </TouchableOpacity>
+          )}
+          {connectionStatus === "accepted" && (
+            <TouchableOpacity style={[styles.actionButton, styles.messageButton]}>
+              <Text style={styles.connectStatus}>Following</Text>{" "}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </ScrollView>
@@ -158,5 +198,8 @@ const styles = StyleSheet.create({
     color: "white", // White text for the "Connect" button
     fontSize: 18,
     fontWeight: "bold",
+  },
+  connectStatus: {
+    color: "#007BFF",
   },
 });
