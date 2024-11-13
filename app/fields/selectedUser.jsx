@@ -42,9 +42,13 @@ const SelectedUser = () => {
 
   const handleConnectionRequest = async (requesterId, targetId) => {
     try {
+      const targetName = name;
+      const targetEmail = email;
+      const requesterName = user.name;
+      const requesterEmail = user.email;
       const response = await axios.post(
         "http://localhost:3000/api/connection/connect",
-        { requesterId, targetId },
+        { requesterId, targetId, requesterName, targetName, targetEmail, requesterEmail },
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
