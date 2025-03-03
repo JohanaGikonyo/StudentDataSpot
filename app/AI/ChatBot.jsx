@@ -84,9 +84,9 @@ export default function ChatBot() {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.headerText}>AI Assistant</Text>
-            </View>
+            {/* <View style={styles.header}>
+                <Text style={styles.headerText}></Text>
+            </View> */}
      
             {/* Chat Area */}
             <View style={styles.chatArea}>
@@ -126,6 +126,7 @@ export default function ChatBot() {
                         onChangeText={setUserInput}
                         multiline
                         maxHeight={100}
+                        className="outline-none"
                     />
                     <TouchableOpacity 
                         onPress={handleUserInput}

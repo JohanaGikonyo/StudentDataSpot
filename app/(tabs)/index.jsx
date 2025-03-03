@@ -70,13 +70,18 @@ const DefaultTab = () => {
     <Link href="/settings/setting" style={styles.icon}>
       <FontAwesome size={24} name="cog" color="black" />
     </Link>
-    <SearchBar
-      placeholder="Search Here..."
-      value={search}
+
+
+     <SearchBar
+              placeholder="Search Here..."
+              platform="default"
+              containerStyle={styles.searchContainer}
+              inputContainerStyle={styles.searchInputContainer}
+              inputStyle={styles.searchInput}
+              value={search}
       onChangeText={handleSearchChange}
-      containerStyle={styles.searchBarContainer}
-      className="outline-none bg-neutral-50 text-slate-900 px-2"
-    />
+              className="outline-none text-slate-900"
+            />
   </View>
 
       {loading ? (
@@ -133,7 +138,16 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderTopWidth: 0,
     borderBottomWidth: 0,
-  },
+  },searchContainer: {
+      backgroundColor: "transparent",
+      borderTopColor: "transparent",
+      borderBottomColor: "transparent",
+      padding: 0,
+    },
+    searchInputContainer: {
+      backgroundColor: "#E0E0E0",
+      borderRadius: 25,
+    },
   icon: {
     marginHorizontal: 10,
     color: "#fff",

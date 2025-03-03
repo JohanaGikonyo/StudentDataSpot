@@ -20,6 +20,7 @@ const VideoChat = () => {
           inputStyle={styles.searchInput}
           value={search}
           onChangeText={handleSearchChange}
+          className="outline-none text-slate-900"
         />
       </View>
       <View style={styles.content}>
