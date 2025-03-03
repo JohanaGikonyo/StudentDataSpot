@@ -45,6 +45,11 @@ export default function TabLayout() {
       <Text style={styles.profileText}>{user?.name || "User"}</Text>
     </TouchableOpacity>
   );
+  const navigateToBot = () =>{
+    router.push({
+      pathname: "/AI/ChatBot"
+    })
+  }
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
@@ -77,7 +82,7 @@ export default function TabLayout() {
           name="Mr. Tutor"
           options={{
             title: "Mr. Tutor",
-            tabBarIcon: ({ color }) => <Feather size={28} name="message-circle" color={color} />,
+            tabBarIcon: ({ color }) => <Feather size={28} name="message-circle" color={color} onPress={navigateToBot}/>,
             header: () => (
               <Appbar.Header style={styles.header}>
                 <Appbar.BackAction size={30} onPress={() => router.push("/(tabs)")} />
