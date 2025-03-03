@@ -1,108 +1,85 @@
-import React from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { usePathname, useRouter } from "expo-router";
-const ChatList = ({ navigation }) => {
-  const chats = [
-    {
-      id: 1,
-      name: "Emmy Young",
-      lastMessage: "Hello, pleasure to connect",
-      image: "https://randomuser.me/api/portraits/women/1.jpg",
-    },
-    { id: 2, name: "Kelvian Wesale", lastMessage: "Thanks", image: "https://randomuser.me/api/portraits/men/2.jpg" },
-    { id: 3, name: "Anzel Godwils", lastMessage: "Nice", image: "https://randomuser.me/api/portraits/women/3.jpg" },
-    {
-      id: 4,
-      name: "Memo Brian",
-      lastMessage: "Haina noma King",
-      image: "https://randomuser.me/api/portraits/men/4.jpg",
-    },
-    { id: 5, name: "Andrew John", lastMessage: "Sawa man", image: "https://randomuser.me/api/portraits/men/5.jpg" },
-    {
-      id: 6,
-      name: "Anthony Matthew",
-      lastMessage: "The class will be as from 10",
-      image: "https://randomuser.me/api/portraits/men/6.jpg",
-    },
-    { id: 7, name: "Leshan Ian", lastMessage: "Safi mkuu", image: "https://randomuser.me/api/portraits/men/7.jpg" },
-  ];
+// Frontend (ChatList.js)
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal } from "react-native";
+import { useRouter } from "expo-router";
+import axios from "redaxios";
+import { useUser } from "@/store/userStore";
+import moment from "moment";
+import { Feather } from "@expo/vector-icons";
+import UsersModal from "@/components/UsersModal";
+export default function ChatList() {
+  const [chats, setChats] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const { user } = useUser();
+
+  useEffect(() => {
+    const fetchChats = async () => {
+      if (user.id) {
+        try {
+          const response = await axios.get(`http://localhost:3000/api/chats/${user.id}`);
+          setChats(response.data);
+        } catch (error) {
+          console.error("Error fetching chats:", error);
+        }
+      }
+    };
+
+    fetchChats();
+  }, [user.id]);
+
+  const toggleModal = () => {
+    setIsModalVisible(!isModalVisible);
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} refreshControl={null}>
-      {chats.map((chat) => (
-        <ChatItem key={chat.id} chat={chat} navigation={navigation} />
-      ))}
-    </ScrollView>
-  );
-};
+    <View className="flex-1">
+      <ScrollView className="p-5 bg-[#f5f6ee]">
+        {chats.map((chat) => (
+          <ChatItem key={chat.userId} chat={chat} />
+        ))}
+      </ScrollView>
 
-const ChatItem = ({ chat, navigation }) => {
+      <TouchableOpacity
+        className="sticky bottom-5 r-5 ml-[85%]  bg-blue-500 rounded-full p-3 shadow-md w-10 flex items-center justify-center"
+        onPress={toggleModal}
+      >
+        <Feather name="message-square" size={24} color="white" />
+      </TouchableOpacity>
+
+      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
+        <UsersModal onClose={toggleModal} />
+      </Modal>
+    </View>
+  );
+}
+
+function ChatItem({ chat }) {
   const router = useRouter();
-  const { name, lastMessage, image } = chat;
+  const { name, photo, lastMessage, userId, lastMessageTime } = chat;
 
   const onPressChat = () => {
-    // Navigate to chat screen
     router.push({
       pathname: "/chatspot/Messaging",
-      params: { name: name, image: image, status: "online" },
+      params: { name: name, photo: photo, status: "online", id: userId },
     });
-    console.log(`Navigating to chat with ${name}`);
   };
 
   return (
     <View>
-      <TouchableOpacity style={styles.chatItem} onPress={onPressChat}>
-        <Image source={{ uri: image }} style={styles.avatar} />
-        <View style={styles.chatDetails}>
-          <Text style={styles.chatName}>{name}</Text>
-          <Text style={styles.lastMessage}>{lastMessage}</Text>
+      <TouchableOpacity
+        className="flex-row items-center bg-[#f5f6ee] p-4 mb-2 rounded-lg shadow-sm"
+        onPress={onPressChat}
+      >
+        <Image source={{ uri: photo }} className="w-12 h-12 rounded-full mr-4" />
+        <View className="flex-1">
+          <Text className="font-bold text-lg mb-1">{name}</Text>
+          <Text className="text-gray-600">{lastMessage}</Text>
         </View>
+        <Text className="text-xs text-gray-400">
+          {moment(lastMessageTime).fromNow()}
+        </Text>
       </TouchableOpacity>
-      <View style={styles.horizontalLine} />
+      <View className="h-[1px] bg-[#EDEADE]" />
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    backgroundColor: "#f5f6ee",
-  },
-  chatItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f6ee",
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 0,
-  },
-  horizontalLine: {
-    height: 1,
-    backgroundColor: "#EDEADE",
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-  },
-  chatDetails: {
-    flex: 1,
-  },
-  chatName: {
-    fontWeight: "bold",
-    fontSize: 18,
-    marginBottom: 5,
-  },
-  lastMessage: {
-    color: "#666666",
-  },
-});
-
-export default ChatList;
+}

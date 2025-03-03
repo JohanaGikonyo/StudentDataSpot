@@ -2,9 +2,10 @@ import { StyleSheet, Text, View, FlatList, TouchableOpacity, ScrollView } from "
 import React from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Appbar, Card } from "react-native-paper";
-
+import { useUser } from "../../store/userStore";
 const Field = () => {
   const router = useRouter();
+  const {user}=useUser();
   const { title: titleParam } = useLocalSearchParams();
 
   const title = Array.isArray(titleParam) ? titleParam[0] : titleParam;
@@ -59,7 +60,7 @@ const Field = () => {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title={`Hello User - ${title}`} titleStyle={styles.appbarTitle} />
+        <Appbar.Content title={`Hello ${user.name} - ${title}`} titleStyle={styles.appbarTitle} />
       </Appbar.Header>
       <View style={styles.content}>
         <Text style={styles.fieldTitle}>{title} Topics</Text>

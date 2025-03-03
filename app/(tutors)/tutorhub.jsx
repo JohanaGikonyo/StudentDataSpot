@@ -1,14 +1,16 @@
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from "react-native";
 import React from "react";
 import { useRouter } from "expo-router";
-
+import { useUser } from "../../store/userStore";
 const TutorHub = () => {
+  const {user}=useUser();
   const router = useRouter();
   const Fields = ["Engineering", "Physics and Applied Math", "Computer Science", "Social Sciences", "Media and Art"];
 
   return (
+    <ScrollView>
     <View style={styles.container}>
-      <Text style={styles.welcomeText}>Welcome User</Text>
+      <Text style={styles.welcomeText}>Welcome {user.name}</Text>
       <Text style={styles.selectText}>Please Select Your Field of Learning</Text>
       {Fields.map((field, index) => (
         <TouchableOpacity
@@ -23,6 +25,7 @@ const TutorHub = () => {
         </TouchableOpacity>
       ))}
     </View>
+    </ScrollView>
   );
 };
 

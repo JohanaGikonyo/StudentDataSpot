@@ -1,134 +1,232 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Platform,
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
-import io from "socket.io-client";
 
-const Upload = () => {
-  const [video, setVideo] = useState(null);
+export default function Upload(params) {
   const [title, setTitle] = useState("");
-  const socket = io("http://192.168.137.129:3000");
+  const [desc, setDesc] = useState("");
+  const [category, setCategory] = useState("AI");
+  const [video, setVideo] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const getPermissions = async () => {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "Sorry, we need camera roll permissions to make this work!");
+  const requestPermission = async () => {
+    if (Platform.OS !== "web") {
+      try {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission required",
+            "Sorry, we need camera roll permissions to pick the video"
+          );
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error("Error requesting permissions:", error);
+        Alert.alert("Error", "Failed to request permissions");
+        return false;
       }
-    };
-    getPermissions();
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+    }
+    return true;
+  };
 
   const pickVideo = async () => {
     try {
+      const hasPermission = await requestPermission();
+      if (!hasPermission) return;
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes: ['videos'],
         allowsEditing: true,
+        allowsMultipleSelection: false,
         quality: 1,
       });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setVideo(result.assets[0].uri);
+      if (!result.canceled && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setVideo(uri);
+      } else {
+        Alert.alert("Error", "No video selected.");
       }
+      
     } catch (error) {
-      Alert.alert("Error", "Something went wrong while picking the video.");
-      console.error(error);
+      console.error("Error while picking the video:", error);
+      Alert.alert(
+        "Error",
+        "Failed to pick video. Please try again."
+      );
     }
   };
 
-  const uploadVideo = async () => {
-    if (!title || !video) {
-      Alert.alert("Missing Information", "Please provide both a title and a video to upload.");
+  const handleSubmit = async () => {
+    if (!video || !title || !desc || !category) {
+      Alert.alert(
+        "Missing information",
+        "Please fill all the fields to continue..."
+      );
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("video", {
-      uri: video,
-      type: "video/mp4", // Adjust the type as needed
-      name: "video.mp4",
-    });
-
+    setLoading(true);
     try {
-      await axios.post("http://192.168.137.129:3000/api/videos/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      Alert.alert("Success", "Video uploaded successfully");
-      setVideo(null); // Clear video after upload
-      setTitle(""); // Clear title after upload
+      const formData = new FormData();
+      
+      // Add video file
+      formData.append("video", {
+        uri: video,
+        type: "video/mp4",
+        name: "video.mp4",
+      }, "video");
 
-      // Emit event to update viewers
-      socket.emit("newVideo", { title, videoUrl: video });
+      // Add the other form data
+      formData.append("title", title);
+      formData.append("desc", desc);
+      formData.append("category", category);
+      console.log([...formData.entries()]);
+
+
+      const response = await axios.post(
+        "http://localhost:3000/api/video/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.data.success) {
+        Alert.alert("Success", "Video uploaded successfully!");
+        // Reset form
+        setTitle("");
+        setDesc("");
+        setVideo(null);
+        setCategory("AI");
+
+      } else {
+        throw new Error(response.data.message || "Upload failed");
+      }
     } catch (error) {
-      Alert.alert("Error", "Failed to upload video.");
-      console.error(error);
+      console.error("Upload error:", error);
+      Alert.alert(
+        "Upload failed",
+        error.response?.data?.message || "Error uploading the video. Please try again!"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Upload Video</Text>
-      <TextInput style={styles.input} placeholder="Video Title" value={title} onChangeText={setTitle} />
-      <TouchableOpacity style={styles.button} onPress={pickVideo}>
-        <Text style={styles.buttonText}>Pick a Video</Text>
+      <Text style={styles.title}>Upload Video</Text>
+      
+      <TextInput
+        style={styles.input}
+        placeholder="Channel Title"
+        value={title}
+        onChangeText={setTitle}
+      />
+      
+      <Picker
+        selectedValue={category}
+        onValueChange={setCategory}
+        style={styles.picker}
+      >
+        <Picker.Item label="AI" value="AI" />
+        <Picker.Item label="Web Development" value="Web Development" />
+        <Picker.Item label="Data Science" value="Data Science" />
+        <Picker.Item label="Design" value="Design" />
+      </Picker>
+      
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        placeholder="Description"
+        value={desc}
+        onChangeText={setDesc}
+        multiline
+      />
+      
+      <TouchableOpacity
+        style={styles.pickButton}
+        onPress={pickVideo}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {video !== null? "Selected":"Select Video"}
+        </Text>
       </TouchableOpacity>
-      {video && <Text style={styles.videoText}>Video selected</Text>}
-      <TouchableOpacity style={[styles.button, styles.uploadButton]} onPress={uploadVideo}>
-        <Text style={styles.buttonText}>Upload Video</Text>
+      
+      <TouchableOpacity
+        style={[
+          styles.uploadButton,
+          loading && styles.disabledButton,
+        ]}
+        onPress={handleSubmit}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Uploading..." : "Upload Video"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
     padding: 20,
+    backgroundColor: "#fff",
   },
-  header: {
+  title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
   },
   input: {
-    width: "100%",
-    padding: 10,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#ddd",
     borderRadius: 5,
-    marginBottom: 20,
+    padding: 10,
+    marginBottom: 15,
   },
-  button: {
-    width: "100%",
-    padding: 15,
-    backgroundColor: "#007BFF",
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  picker: {
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#ddd",
     borderRadius: 5,
-    alignItems: "center",
-    marginBottom: 20,
+  },
+  pickButton: {
+    backgroundColor: "#2196F3",
+    padding: 15,
+    borderRadius: 5,
+    marginBottom: 15,
   },
   uploadButton: {
-    backgroundColor: "#28A745",
+    backgroundColor: "#4CAF50",
+    padding: 15,
+    borderRadius: 5,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    textAlign: "center",
     fontWeight: "bold",
   },
-  videoText: {
-    marginBottom: 20,
-    fontSize: 16,
-    color: "#555",
-  },
 });
-
-export default Upload;

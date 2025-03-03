@@ -22,7 +22,7 @@ const Tutorbook = () => {
     const fetchTutors = async () => {
       try {
         const response = await axios.get("http://localhost:3000/api/tutors/gettutors", {
-          params: { page, limit: 50 },
+          params: { page, limit: 4 },
         });
         setProfiles((prevProfiles) => [...prevProfiles, ...response.data.tutors]); // Append new profiles
         setHasMore(response.data.hasMore); // Check if more tutors exist
@@ -40,19 +40,19 @@ const Tutorbook = () => {
   const handleSearchChange = (text) => {
     setSearch(text);
   };
-  const shuffleProfiles = (array) => {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-  };
+  // const shuffleProfiles = (array) => {
+  //   for (let i = array.length - 1; i > 0; i--) {
+  //     const j = Math.floor(Math.random() * (i + 1));
+  //     [array[i], array[j]] = [array[j], array[i]];
+  //   }
+  //   return array;
+  // };
   const filteredProfiles = profiles.filter(
     (profile) =>
       profile.name.toLowerCase().includes(search.toLowerCase()) ||
       profile.course.toLowerCase().includes(search.toLowerCase())
   );
-  const shuffledProfiles = shuffleProfiles(filteredProfiles);
+  // const shuffledProfiles = shuffleProfiles(filteredProfiles);
 
   const handleSelectTutor = (tutor) => {
     router.push({
@@ -122,7 +122,7 @@ const Tutorbook = () => {
 
       <ScrollView
         style={styles.scrollView}
-        shuffledProfilesonScroll={({ nativeEvent }) => {
+        onScroll={({ nativeEvent }) => {
           if (
             nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >=
             nativeEvent.contentSize.height - 20
@@ -143,11 +143,12 @@ const Tutorbook = () => {
               inputStyle={styles.searchInput}
               value={search}
               onChangeText={handleSearchChange}
+              className="outline-none text-slate-700"
             />
           </View>
           <Title style={styles.title}>Featured Tutors</Title>
           <View style={styles.profileContainer}>
-            {shuffledProfiles.map((profile, index) => (
+            {filteredProfiles.map((profile, index) => (
               <TouchableOpacity key={index} style={styles.profile} onPress={() => handleSelectTutor(profile)}>
                 {renderProfileImageOrInitials(profile)}
                 <Text style={styles.profileName}>{profile.name}</Text>

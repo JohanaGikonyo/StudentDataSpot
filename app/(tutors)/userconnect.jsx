@@ -24,7 +24,7 @@ const Users = () => {
     const fetchProfiles = async () => {
       try {
         const response = await axios.get("http://localhost:3000/api/users/getUsers", {
-          params: { page, limit: 50 },
+          params: { page, limit: 4 },
         });
         setProfiles((prevProfiles) => [...prevProfiles, ...response.data.users]); // Append new profiles
         setHasMore(response.data.hasMore); // Check if more tutors exist
@@ -38,18 +38,19 @@ const Users = () => {
       fetchProfiles(); // Load more users when needed
     }
   }, [page]);
+  
 
   const handleSearchChange = (text) => {
     setSearch(text);
   };
 
-  const shuffleProfiles = (array) => {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-  };
+  // const shuffleProfiles = (array) => {
+  //   for (let i = array.length - 1; i > 0; i--) {
+  //     const j = Math.floor(Math.random() * (i + 1));
+  //     [array[i], array[j]] = [array[j], array[i]];
+  //   }
+  //   return array;
+  // };
 
   const filteredProfiles = profiles.filter(
     (profile) =>
@@ -57,7 +58,7 @@ const Users = () => {
       (profile.name.toLowerCase().includes(search.toLowerCase()) ||
         profile.course.toLowerCase().includes(search.toLowerCase()))
   );
-  const shuffledProfiles = shuffleProfiles(filteredProfiles);
+  // const shuffledProfiles = shuffleProfiles(filteredProfiles);
 
   const handleSelectUser = (user) => {
     router.push({
@@ -143,8 +144,8 @@ const Users = () => {
           <View style={styles.profilesContainer}>
             {loading ? (
               <Skeleton />
-            ) : shuffledProfiles.length > 0 ? (
-              shuffledProfiles.map((profile, index) => (
+            ) : filteredProfiles.length > 0 ? (
+              filteredProfiles.map((profile, index) => (
                 <TouchableOpacity style={styles.profileCard} key={index} onPress={() => handleSelectUser(profile)}>
                   {renderAvatar(profile.name, profile.photo)}
                   <Text style={styles.profileName}>{profile.name}</Text>

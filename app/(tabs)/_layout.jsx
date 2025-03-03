@@ -39,7 +39,7 @@ export default function TabLayout() {
         <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
       ) : (
         <View style={[styles.profileImage, styles.initialsContainer]}>
-          <Text style={styles.initials}>{getInitials(user?.name || user.email)}</Text>
+          <Text style={styles.initials} >{getInitials(user?.name || user.email)}</Text>
         </View>
       )}
       <Text style={styles.profileText}>{user?.name || "User"}</Text>
@@ -66,7 +66,7 @@ export default function TabLayout() {
               <Appbar.Header style={styles.header}>
                 <View style={styles.headerLeft}>
                   <FontAwesome size={28} name="youtube-play" color="black" />
-                  <Text style={styles.headerTitle}>Tutor Book</Text>
+                  <Text style={styles.headerTitle} >Tutor Book</Text>
                 </View>
                 <View style={styles.headerRight}>{renderProfileImage()}</View>
               </Appbar.Header>

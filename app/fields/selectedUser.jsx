@@ -66,7 +66,7 @@ const SelectedUser = () => {
   const handleMessagePress = () => {
     router.push({
       pathname: "/chatspot/Messaging",
-      params: { name: name, status: "online", photo: photo },
+      params: { name: name, status: "online", photo: photo,id:id },
     });
   };
 

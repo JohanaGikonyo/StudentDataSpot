@@ -1,30 +1,82 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View, Image, FlatList, TextInput, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Image, FlatList, TextInput, TouchableOpacity, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { Appbar } from "react-native-paper";
 import { useRouter } from "expo-router";
+import { useUser } from "@/store/userStore";
+import axios from "redaxios";
+import moment from 'moment';
+
 export default function Messaging() {
-  const { name, status, photo } = useLocalSearchParams();
+  const { name, photo, status, id } = useLocalSearchParams();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const router = useRouter();
+  const { user } = useUser();
 
-  const handleSend = () => {
-    if (message.trim()) {
-      setMessages([...messages, { id: messages.length + 1, text: message }]);
-      setMessage(""); // Clear the input after sending
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (user.id && id) {
+        try {
+          const response = await axios.post("http://localhost:3000/api/message/get_message", {
+            recipient: user.id,
+            sender: id,
+          });
+
+          const sentResponse = await axios.post("http://localhost:3000/api/message/get_message",{
+            recipient: id,
+            sender: user.id,
+          })
+
+          if (response.status === 200 && sentResponse.status ===200) {
+            const receivedMessages = response.data.map(msg => ({...msg, type: 'received'}));
+            const sentMessages = sentResponse.data.map(msg => ({...msg, type: 'sent'}));
+            const combinedMessages = [...receivedMessages, ...sentMessages].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+            setMessages(combinedMessages);
+          } else {
+            console.error("Error fetching messages");
+          }
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+        }
+      }
+    };
+
+    fetchMessages();
+  }, [user.id, id]);
+
+  const handleSend = async () => {
+    if (message.trim() && user.id) {
+      const newMessage = {
+        sender: user.id,
+        recipient: id,
+        content: message,
+      };
+      try {
+        const response = await axios.post("http://localhost:3000/api/message/post_message", newMessage);
+        if (response.status >= 200 && response.status < 300) {
+          console.log("Message sent successfully:", response.data);
+          setMessages([...messages, { ...response.data, type: 'sent' }]);
+          setMessage("");
+        } else {
+          console.error("Error sending message:", response.data.message || "Failed to send message");
+          throw new Error(response.data.message || "Failed to send message");
+        }
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
   const renderProfileImage = () => {
     if (photo) {
-      return <Image source={{ uri: photo }} style={styles.profileImage} />;
+      return <Image source={{ uri: photo }} className="w-12 h-12 rounded-full mr-2" />;
     } else {
       const firstLetter = name.charAt(0).toUpperCase();
       return (
-        <View style={[styles.fallbackImage, { backgroundColor: getBackgroundColor(firstLetter) }]}>
-          <Text style={styles.fallbackText}>{firstLetter}</Text>
+        <View className={`w-12 h-12 rounded-full justify-center items-center mr-2 bg-[${getBackgroundColor(firstLetter)}]`}>
+          <Text className="text-white text-xl font-bold">{firstLetter}</Text>
         </View>
       );
     }
@@ -36,157 +88,64 @@ export default function Messaging() {
   };
 
   const renderMessage = ({ item }) => (
-    <View style={styles.messageContainer}>
-      <Text style={styles.messageText}>{item.text}</Text>
+    <View className={`rounded-xl p-2 mb-2 max-w-[80%] ${item.type === 'sent' ? 'bg-[#DCF8C6] self-end' : 'bg-[#E0E0E0] self-start'}`}>
+      <Text className="text-base text-[#333]">{item.content}</Text>
+      <Text className="text-xs text-[#666] self-end mt-1">{moment(item.createdAt).format('LT')}</Text>
     </View>
   );
 
   const handleVoicePress = () => {
-    // Logic for voice input
     console.log("Voice icon pressed");
   };
 
   const handleUploadPress = () => {
-    // Logic for document/image upload
     console.log("Upload icon pressed");
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+    <View className="flex-1">
+      <View className="flex-row items-center p-2 bg-white">
         <Appbar.BackAction
           onPress={() => {
             router.back();
           }}
         />
         {renderProfileImage()}
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{name}</Text>
-          <Text style={styles.userStatus}>{status === "online" ? "Online" : "Offline"}</Text>
+        <View className="flex-1">
+          <Text className="text-lg font-bold">{name}</Text>
+          <Text className="text-sm text-green-500">{status === "online" ? "Online" : "Offline"}</Text>
         </View>
-        <View style={styles.iconContainer}>
+        <View className="flex-row items-center justify-between w-24">
           <Feather name="phone" size={24} color="black" />
           <Feather name="video" size={24} color="black" />
           <Feather name="more-vertical" size={24} color="black" />
         </View>
       </View>
 
-      {/* Chat Messages */}
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.chatContainer}
-        inverted
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={{ padding: 10 }}
+        // inverted
       />
 
-      {/* Input Bar */}
-      <View style={styles.inputContainer}>
+      <View className="flex-row items-center p-2 border-t border-gray-300 bg-white">
         <TouchableOpacity onPress={handleVoicePress}>
           <Feather name="mic" size={24} color="#007BFF" />
         </TouchableOpacity>
         <TextInput
-          style={styles.input}
+          className="flex-1 rounded-full border border-gray-300 p-2 mx-2 h-10 outline-none"
           placeholder="Type a message..."
           value={message}
           onChangeText={setMessage}
-          //   onFocus={() => setInputFocused(true)}
-          //   onBlur={() => setInputFocused(false)}
         />
         <TouchableOpacity onPress={handleUploadPress}>
-          {/* <Feather name="upload" size={24} color="#007BFF" /> */}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+        <TouchableOpacity className="bg-[#007BFF] rounded-full p-2" onPress={handleSend}>
           <Feather name="send" size={24} color="white" />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "#fff",
-  },
-  profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
-  },
-  fallbackImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  fallbackText: {
-    color: "white",
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  userStatus: {
-    fontSize: 14,
-    color: "green",
-  },
-  iconContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: 100,
-  },
-  chatContainer: {
-    padding: 10,
-  },
-  messageContainer: {
-    backgroundColor: "#E0E0E0",
-    borderRadius: 15,
-    padding: 10,
-    marginBottom: 10,
-    alignSelf: "flex-start",
-    maxWidth: "80%",
-  },
-  messageText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#ddd",
-    backgroundColor: "#fff",
-  },
-  input: {
-    flex: 1,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 10,
-    marginHorizontal: 10,
-    height: 40,
-    outlineWidth: 0,
-  },
-  sendButton: {
-    backgroundColor: "#007BFF",
-    borderRadius: 20,
-    padding: 10,
-  },
-});

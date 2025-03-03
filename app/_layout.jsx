@@ -4,6 +4,7 @@ import { Appbar } from "react-native-paper";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useUser } from "../store/userStore";
+import "../global.css"
 export default function Layout() {
   const { user } = useUser();
   const router = useRouter();

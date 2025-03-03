@@ -6,7 +6,7 @@ import RegisterForm from "./authentification/RegisterForm";
 import LoginForm from "./authentification/LoginForm";
 import { useUser, useFollowers, usePending } from "@/store/userStore";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
-
+import "../global.css"
 export default function Home() {
   const [isAppReady, setAppReady] = useState(false);
   const [showLogin, setShowLogin] = useState(false);

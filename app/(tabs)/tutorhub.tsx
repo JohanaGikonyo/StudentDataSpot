@@ -1,26 +1,30 @@
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from "react-native";
 import React from "react";
 import { useRouter } from "expo-router";
-
+import { useUser } from "@/store/userStore";
 const Tutorbook = () => {
+  const { user } = useUser();
   const router = useRouter();
   const Fields = ["Engineering", "Physics and Applied Math", "Computer Science", "Social Sciences", "Media and Art"];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.welcomeText}>Welcome User</Text>
+    <ScrollView>
+      <View style={styles.container}>
+        <Text style={styles.welcomeText}>Welcome {user.name}</Text>
 
-      <Text style={styles.selectText}>Please Select Your Field of Learning</Text>
-      {Fields.map((field, index) => (
-        <TouchableOpacity
-          key={index}
-          style={styles.fieldButton}
-          onPress={() => router.push(`/fields/field?title=${encodeURIComponent(field)}`)}
-        >
-          <Text style={styles.fieldText}>{field}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
+        <Text style={styles.selectText}>Please Select Your Field of Learning</Text>
+        {Fields.map((field, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.fieldButton}
+            className="bg-blue-400 text-slate-100 text-2xl"
+            onPress={() => router.push(`/fields/field?title=${encodeURIComponent(field)}`)}
+          >
+            <Text style={styles.fieldText}>{field}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -52,6 +56,6 @@ const styles = StyleSheet.create({
   },
   fieldText: {
     fontSize: 16,
-    color: "#fff",
+    // color: "#fff",
   },
 });
